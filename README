@@ -1,0 +1,10 @@
+mastoreposter - easy-to-use mastodon-to-[everything] reposter!
+
+# TODO: readme
+
+Configuration: check `config.ini`
+Run:
+    python3 -m virtualenv venv
+    source venv/bin/activate
+    pip install -r ./requirements.txt
+    python3 -m mastoreposter config.ini
