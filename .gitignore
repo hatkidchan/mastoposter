@@ -1,4 +1,5 @@
 __pycache__
 *.py[cow]
 config-prod.ini
+venv
 
