@@ -2,11 +2,11 @@
 from asyncio import run
 from configparser import ConfigParser
 
-from mastoreposter.integrations.telegram import TelegramIntegration
-from mastoreposter.sources import websocket_source
+from mastoposter.integrations.telegram import TelegramIntegration
+from mastoposter.sources import websocket_source
 from typing import AsyncGenerator, Callable, List
-from mastoreposter.integrations.base import BaseIntegration
-from mastoreposter.types import Status
+from mastoposter.integrations.base import BaseIntegration
+from mastoposter.types import Status
 
 
 async def listen(

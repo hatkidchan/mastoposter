@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 
-from mastoreposter.types import Status
+from mastoposter.types import Status
 
 
 class BaseIntegration(ABC):

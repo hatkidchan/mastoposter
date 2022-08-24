@@ -3,8 +3,8 @@ from html import escape
 from typing import Any, List, Mapping, Optional, Union
 from bs4 import BeautifulSoup, Tag, PageElement
 from httpx import AsyncClient
-from mastoreposter.integrations.base import BaseIntegration
-from mastoreposter.types import Attachment, Status
+from mastoposter.integrations.base import BaseIntegration
+from mastoposter.types import Attachment, Status
 
 
 @dataclass

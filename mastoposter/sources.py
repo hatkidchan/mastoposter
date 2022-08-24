@@ -3,7 +3,7 @@ from typing import AsyncGenerator
 from urllib.parse import urlencode
 
 
-from mastoreposter.types import Status
+from mastoposter.types import Status
 
 
 async def websocket_source(url: str, **params) -> AsyncGenerator[Status, None]:
