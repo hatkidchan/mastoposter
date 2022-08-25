@@ -91,6 +91,73 @@ class Account:
 
 
 @dataclass
+class AttachmentMetaImage:
+    @dataclass
+    class Vec2F:
+        x: float
+        y: float
+
+    @dataclass
+    class AttachmentMetaImageDimensions:
+        width: int
+        height: int
+        size: str
+        aspect: float
+
+    original: AttachmentMetaImageDimensions
+    small: AttachmentMetaImageDimensions
+    focus: Vec2F
+
+    @classmethod
+    def from_dict(cls, data: dict) -> "AttachmentMetaImage":
+        return cls(
+            **data,
+            original=cls.AttachmentMetaImageDimensions(**data["original"]),
+            small=cls.AttachmentMetaImageDimensions(**data["small"]),
+            focus=cls.Vec2F(**data["focus"])
+        )
+
+
+@dataclass
+class AttachmentMetaVideo:
+    @dataclass
+    class AttachmentMetaVideoOriginal:
+        width: int
+        height: int
+        duration: float
+        bitrate: int
+        frame_rate: Optional[str]  # XXX Gargron wtf?
+
+    @dataclass
+    class AttachmentMetaVideoSmall:
+        width: int
+        height: int
+        size: str
+        aspect: float
+
+    length: str
+    duration: float
+    fps: int
+    size: str
+    width: int
+    height: int
+    aspect: float
+    audio_encode: str
+    audio_bitrate: str  # XXX GARGROOOOONNNNNN!!!!!!!
+    audio_channels: str  # XXX I HATE YOU
+    original: AttachmentMetaVideoOriginal
+    small: AttachmentMetaVideoSmall
+
+    @classmethod
+    def from_dict(cls, data: dict) -> "AttachmentMetaVideo":
+        return cls(
+            **data,
+            original=cls.AttachmentMetaVideoOriginal(**data["original"]),
+            small=cls.AttachmentMetaVideoSmall(**data["small"])
+        )
+
+
+@dataclass
 class Attachment:
     id: str
     type: Literal["unknown", "image", "gifv", "video", "audio"]

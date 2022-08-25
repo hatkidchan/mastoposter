@@ -16,7 +16,7 @@ class TGResponse:
 
     @classmethod
     def from_dict(cls, data: dict, params: dict) -> "TGResponse":
-        return cls(data["ok"], params, data.get("result"), data.get("error"))
+        return cls(data["ok"], params, data.get("result"), data.get("description"))
 
 
 class TelegramIntegration(BaseIntegration):
@@ -129,6 +129,7 @@ class TelegramIntegration(BaseIntegration):
     async def post(self, status: Status) -> str:
         source = status.reblog or status
         text = self.node_to_text(BeautifulSoup(source.content, features="lxml"))
+        text = text.rstrip()
 
         if source.spoiler_text:
             text = "Spoiler: {cw}\n<tg-spoiler>{text}</tg-spoiler>".format(
@@ -154,8 +155,11 @@ class TelegramIntegration(BaseIntegration):
             msg = await self._post_mediagroup(text, source.media_attachments)
 
         if not msg.ok:
-            raise Exception(msg.error, msg.params)
+            # raise Exception(msg.error, msg.params)
+            return ""  # XXX: silently ignore for now
 
+        if msg.result:
+            return msg.result.get("message_id", "")
         return ""
 
     def __repr__(self) -> str:
