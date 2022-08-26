@@ -77,7 +77,7 @@ class TelegramIntegration(BaseIntegration):
             disable_web_page_preview=True,
             chat_id=self.chat_id,
             caption=text,
-            **{self.MEDIA_MAPPING[media.type]: media.preview_url},
+            **{self.MEDIA_MAPPING[media.type]: media.url},
         )
 
     async def _post_mediagroup(self, text: str, media: List[Attachment]) -> TGResponse:
