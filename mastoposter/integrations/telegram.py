@@ -142,7 +142,8 @@ class TelegramIntegration(BaseIntegration):
         if status.reblog and self.show_boost_from:
             text = (
                 'Boosted post from <a href="{}">{}</a>\n'.format(
-                    source.account.url, source.account.display_name
+                    source.account.url,
+                    source.account.display_name or source.account.username,
                 )
                 + text
             )

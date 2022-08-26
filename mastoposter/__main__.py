@@ -1,11 +1,9 @@
 #!/usr/bin/env python3
 from asyncio import run
 from configparser import ConfigParser
-from mastoposter.integrations.discord import DiscordIntegration
-
-from mastoposter.integrations.telegram import TelegramIntegration
+from mastoposter.integrations import DiscordIntegration, TelegramIntegration
 from mastoposter.sources import websocket_source
-from typing import Any, AsyncGenerator, Callable, Dict, List
+from typing import AsyncGenerator, Callable, List
 from mastoposter.integrations.base import BaseIntegration
 from mastoposter.types import Status
 

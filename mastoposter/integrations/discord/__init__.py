@@ -1,5 +1,4 @@
-from json import dumps
-from typing import Dict, List, Optional
+from typing import List, Optional
 from bs4 import BeautifulSoup, PageElement, Tag
 from httpx import AsyncClient
 from zlib import crc32
@@ -7,7 +6,6 @@ from mastoposter.integrations.base import BaseIntegration
 from mastoposter.integrations.discord.types import (
     DiscordEmbed,
     DiscordEmbedAuthor,
-    DiscordEmbedField,
     DiscordEmbedImage,
 )
 from mastoposter.types import Status
@@ -74,12 +72,12 @@ class DiscordIntegration(BaseIntegration):
 
         text = self.node_to_text(BeautifulSoup(source.content, features="lxml"))
         if source.spoiler_text:
-            text = f"CW: {source.spoiler_text}\n||{text}||"
+            text = f"{source.spoiler_text}\n||{text}||"
 
         if status.reblog is not None:
-            title = f"{status.account.acct} boosted from {source.account.acct}"
+            title = f"@{status.account.acct} boosted from @{source.account.acct}"
         else:
-            title = f"{status.account.acct} posted"
+            title = f"@{status.account.acct} posted"
 
         embeds.append(
             DiscordEmbed(
