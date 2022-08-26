@@ -42,11 +42,13 @@ class TelegramIntegration(BaseIntegration):
         chat_id: Union[str, int],
         show_post_link: bool = True,
         show_boost_from: bool = True,
+        silent: bool = True,
     ):
         self.token = token
         self.chat_id = chat_id
         self.show_post_link = show_post_link
         self.show_boost_from = show_boost_from
+        self.silent = silent
 
     async def _tg_request(self, method: str, **kwargs) -> TGResponse:
         url = self.API_URL.format(self.token, method)
@@ -59,7 +61,7 @@ class TelegramIntegration(BaseIntegration):
         return await self._tg_request(
             "sendMessage",
             parse_mode="HTML",
-            disable_notification=True,
+            disable_notification=self.silent,
             disable_web_page_preview=True,
             chat_id=self.chat_id,
             text=text,
@@ -73,7 +75,7 @@ class TelegramIntegration(BaseIntegration):
         return await self._tg_request(
             "send%s" % self.MEDIA_MAPPING[media.type].title(),
             parse_mode="HTML",
-            disable_notification=True,
+            disable_notification=self.silent,
             disable_web_page_preview=True,
             chat_id=self.chat_id,
             caption=text,
@@ -105,7 +107,7 @@ class TelegramIntegration(BaseIntegration):
 
         return await self._tg_request(
             "sendMediaGroup",
-            disable_notification=True,
+            disable_notification=self.silent,
             disable_web_page_preview=True,
             chat_id=self.chat_id,
             media=media_list,
@@ -116,7 +118,7 @@ class TelegramIntegration(BaseIntegration):
     ) -> TGResponse:
         return await self._tg_request(
             "sendPoll",
-            disable_notification=True,
+            disable_notification=self.silent,
             disable_web_page_preview=True,
             chat_id=self.chat_id,
             question=f"Poll:{poll.id}",
@@ -196,8 +198,10 @@ class TelegramIntegration(BaseIntegration):
             "chat_id={chat!r} "
             "show_post_link={show_post_link!r} "
             "show_boost_from={show_boost_from!r} "
+            "silent={silent!r}>"
         ).format(
             chat=self.chat_id,
             show_post_link=self.show_post_link,
             show_boost_from=self.show_boost_from,
+            silent=self.silent
         )
