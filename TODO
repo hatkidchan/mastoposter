@@ -1,6 +1,7 @@
 [integrations,core] Add database support so remote messages are stored and can be used to reply to them
-[integrations,discord] Add Discord functionality
 [core] Somehow find a way to get your user ID by token
 [core] Maybe get rid of `main.list` field and create one automatically on a startup?
 [integrations] Add support for shellscript integration
-[integrations,telegram] Add formatting option
+[integrations] Add formatting option
+[integrations] Add filters
+[integrations,vk] Add VK integration

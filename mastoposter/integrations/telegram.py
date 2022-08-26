@@ -4,7 +4,7 @@ from typing import Any, List, Mapping, Optional, Union
 from bs4 import BeautifulSoup, Tag, PageElement
 from httpx import AsyncClient
 from mastoposter.integrations.base import BaseIntegration
-from mastoposter.types import Attachment, Status
+from mastoposter.types import Attachment, Poll, Status
 
 
 @dataclass
@@ -111,6 +111,20 @@ class TelegramIntegration(BaseIntegration):
             media=media_list,
         )
 
+    async def _post_poll(
+        self, poll: Poll, reply_to: Optional[str] = None
+    ) -> TGResponse:
+        return await self._tg_request(
+            "sendPoll",
+            disable_notification=True,
+            disable_web_page_preview=True,
+            chat_id=self.chat_id,
+            question=f"Poll:{poll.id}",
+            reply_to_message_id=reply_to,
+            allow_multiple_answers=poll.multiple,
+            options=[opt.title for opt in poll.options],
+        )
+
     @classmethod
     def node_to_text(cls, el: PageElement) -> str:
         if isinstance(el, Tag):
@@ -126,7 +140,7 @@ class TelegramIntegration(BaseIntegration):
             return str.join("", map(cls.node_to_text, el.children))
         return escape(str(el))
 
-    async def post(self, status: Status) -> str:
+    async def post(self, status: Status) -> Optional[str]:
         source = status.reblog or status
         text = self.node_to_text(BeautifulSoup(source.content, features="lxml"))
         text = text.rstrip()
@@ -148,20 +162,33 @@ class TelegramIntegration(BaseIntegration):
                 + text
             )
 
+        ids = []
+
         if not source.media_attachments:
-            msg = await self._post_plaintext(text)
+            if (res := await self._post_plaintext(text)).ok:
+                if res.result:
+                    ids.append(res.result["message_id"])
+
         elif len(source.media_attachments) == 1:
-            msg = await self._post_media(text, source.media_attachments[0])
+            if (
+                res := await self._post_media(text, source.media_attachments[0])
+            ).ok and res.result is not None:
+                ids.append(res.result["message_id"])
         else:
-            msg = await self._post_mediagroup(text, source.media_attachments)
+            if (
+                res := await self._post_mediagroup(text, source.media_attachments)
+            ).ok and res.result is not None:
+                ids.append(res.result["message_id"])
 
-        if not msg.ok:
-            # raise Exception(msg.error, msg.params)
-            return ""  # XXX: silently ignore for now
+        if source.poll:
+            if (
+                res := await self._post_poll(
+                    source.poll, reply_to=ids[0] if ids else None
+                )
+            ).ok and res.result:
+                ids.append(res.result["message_id"])
 
-        if msg.result:
-            return msg.result.get("message_id", "")
-        return ""
+        return str.join(",", map(str, ids))
 
     def __repr__(self) -> str:
         return (

@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Optional, List, Literal
 
@@ -209,6 +209,43 @@ class Tag:
 
 
 @dataclass
+class Poll:
+    @dataclass
+    class PollOption:
+        title: str
+        votes_count: Optional[int] = None
+
+    id: str
+    expires_at: Optional[datetime]
+    expired: bool
+    multiple: bool
+    votes_count: int
+    voters_count: Optional[int] = None
+    options: List[PollOption] = field(default_factory=list)
+    emojis: List[Emoji] = field(default_factory=list)
+
+    @classmethod
+    def from_dict(cls, data: dict) -> "Poll":
+        return cls(
+            id=data["id"],
+            expires_at=(
+                datetime.fromisoformat(data["expires_at"].rstrip("Z"))
+                if data.get("expires_at") is not None
+                else None
+            ),
+            expired=data["expired"],
+            multiple=data["multiple"],
+            votes_count=data["votes_count"],
+            voters_count=(
+                int(data["voters_count"])
+                if data.get("voters_count") is not None
+                else None
+            ),
+            options=[cls.PollOption(**opt) for opt in data["options"]],
+        )
+
+
+@dataclass
 class Status:
     id: str
     uri: str
@@ -227,7 +264,7 @@ class Status:
     in_reply_to_id: Optional[str] = None
     in_reply_to_account_id: Optional[str] = None
     reblog: Optional["Status"] = None
-    poll: Optional[dict] = None
+    poll: Optional[Poll] = None
     card: Optional[dict] = None
     language: Optional[str] = None
     text: Optional[str] = None
@@ -262,7 +299,9 @@ class Status:
                 if data.get("reblog") is not None
                 else None
             ),
-            poll=data.get("poll"),
+            poll=(
+                Poll.from_dict(data["poll"]) if data.get("poll") is not None else None
+            ),
             card=data.get("card"),
             language=data.get("language"),
             text=data.get("text"),

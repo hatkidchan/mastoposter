@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 from asyncio import run
 from configparser import ConfigParser
-from mastoposter.integrations import DiscordIntegration, TelegramIntegration
+from mastoposter import execute_integrations, load_integrations_from
 from mastoposter.sources import websocket_source
 from typing import AsyncGenerator, Callable, List
 from mastoposter.integrations.base import BaseIntegration
@@ -30,8 +30,7 @@ async def listen(
         ):
             continue
 
-        for drain in drains:
-            await drain.post(status)
+        await execute_integrations(status, drains)
 
 
 def main(config_path: str):
@@ -49,22 +48,7 @@ def main(config_path: str):
         for k in _remove:
             del conf[section][k]
 
-    modules: List[BaseIntegration] = []
-    for module_name in conf.get("main", "modules").split():
-        module = conf[f"module/{module_name}"]
-        if module["type"] == "telegram":
-            modules.append(
-                TelegramIntegration(
-                    token=module["token"],
-                    chat_id=module["chat"],
-                    show_post_link=module.getboolean("show_post_link", fallback=True),
-                    show_boost_from=module.getboolean("show_boost_from", fallback=True),
-                )
-            )
-        elif module["type"] == "discord":
-            modules.append(DiscordIntegration(webhook=module["webhook"]))
-        else:
-            raise ValueError("Invalid module type %r" % module["type"])
+    modules = load_integrations_from(conf)
 
     url = "wss://{}/api/v1/streaming".format(conf["main"]["instance"])
     run(
@@ -73,6 +57,7 @@ def main(config_path: str):
             modules,
             conf["main"]["user"],
             url=url,
+            reconnect=conf["main"].getboolean("auto_reconnect", fallback=False),
             list=conf["main"]["list"],
             access_token=conf["main"]["token"],
         )

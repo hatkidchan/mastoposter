@@ -3,3 +3,5 @@ __pycache__
 config-*.ini
 venv
 
+# :3
+tmp.py

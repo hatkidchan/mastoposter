@@ -66,7 +66,7 @@ class DiscordIntegration(BaseIntegration):
                 )
             ).json()
 
-    async def post(self, status: Status) -> str:
+    async def post(self, status: Status) -> Optional[str]:
         source = status.reblog or status
         embeds: List[DiscordEmbed] = []
 
@@ -111,4 +111,4 @@ class DiscordIntegration(BaseIntegration):
             embeds=embeds,
         )
 
-        return ""
+        return None
