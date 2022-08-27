@@ -1,6 +1,7 @@
+from configparser import SectionProxy
 from dataclasses import dataclass
 from html import escape
-from typing import Any, List, Mapping, Optional, Union
+from typing import Any, List, Mapping, Optional
 from bs4 import BeautifulSoup, Tag, PageElement
 from httpx import AsyncClient
 from mastoposter.integrations.base import BaseIntegration
@@ -16,7 +17,12 @@ class TGResponse:
 
     @classmethod
     def from_dict(cls, data: dict, params: dict) -> "TGResponse":
-        return cls(data["ok"], params, data.get("result"), data.get("description"))
+        return cls(
+            ok=data["ok"],
+            params=params,
+            result=data.get("result"),
+            error=data.get("description"),
+        )
 
 
 class TelegramIntegration(BaseIntegration):
@@ -36,19 +42,12 @@ class TelegramIntegration(BaseIntegration):
         "unknown": "document",
     }
 
-    def __init__(
-        self,
-        token: str,
-        chat_id: Union[str, int],
-        show_post_link: bool = True,
-        show_boost_from: bool = True,
-        silent: bool = True,
-    ):
-        self.token = token
-        self.chat_id = chat_id
-        self.show_post_link = show_post_link
-        self.show_boost_from = show_boost_from
-        self.silent = silent
+    def __init__(self, sect: SectionProxy):
+        self.token = sect.get("token", "")
+        self.chat_id = sect.get("chat", "")
+        self.show_post_link = sect.getboolean("show_post_link", True)
+        self.show_boost_from = sect.getboolean("show_boost_from", True)
+        self.silent = sect.getboolean("silent", True)
 
     async def _tg_request(self, method: str, **kwargs) -> TGResponse:
         url = self.API_URL.format(self.token, method)
@@ -82,7 +81,9 @@ class TelegramIntegration(BaseIntegration):
             **{self.MEDIA_MAPPING[media.type]: media.url},
         )
 
-    async def _post_mediagroup(self, text: str, media: List[Attachment]) -> TGResponse:
+    async def _post_mediagroup(
+        self, text: str, media: List[Attachment]
+    ) -> TGResponse:
         media_list: List[dict] = []
         allowed_medias = {"image", "gifv", "video", "audio", "unknown"}
         for attachment in media:
@@ -136,7 +137,9 @@ class TelegramIntegration(BaseIntegration):
                     str.join("", map(cls.node_to_text, el.children)),
                 )
             elif el.name == "p":
-                return str.join("", map(cls.node_to_text, el.children)) + "\n\n"
+                return (
+                    str.join("", map(cls.node_to_text, el.children)) + "\n\n"
+                )
             elif el.name == "br":
                 return "\n"
             return str.join("", map(cls.node_to_text, el.children))
@@ -144,7 +147,9 @@ class TelegramIntegration(BaseIntegration):
 
     async def post(self, status: Status) -> Optional[str]:
         source = status.reblog or status
-        text = self.node_to_text(BeautifulSoup(source.content, features="lxml"))
+        text = self.node_to_text(
+            BeautifulSoup(source.content, features="lxml")
+        )
         text = text.rstrip()
 
         if source.spoiler_text:
@@ -173,12 +178,16 @@ class TelegramIntegration(BaseIntegration):
 
         elif len(source.media_attachments) == 1:
             if (
-                res := await self._post_media(text, source.media_attachments[0])
+                res := await self._post_media(
+                    text, source.media_attachments[0]
+                )
             ).ok and res.result is not None:
                 ids.append(res.result["message_id"])
         else:
             if (
-                res := await self._post_mediagroup(text, source.media_attachments)
+                res := await self._post_mediagroup(
+                    text, source.media_attachments
+                )
             ).ok and res.result is not None:
                 ids.append(res.result["message_id"])
 
@@ -203,5 +212,5 @@ class TelegramIntegration(BaseIntegration):
             chat=self.chat_id,
             show_post_link=self.show_post_link,
             show_boost_from=self.show_boost_from,
-            silent=self.silent
+            silent=self.silent,
         )

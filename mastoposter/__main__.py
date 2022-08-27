@@ -57,7 +57,7 @@ def main(config_path: str):
             modules,
             conf["main"]["user"],
             url=url,
-            reconnect=conf["main"].getboolean("auto_reconnect", fallback=False),
+            reconnect=conf["main"].getboolean("auto_reconnect", False),
             list=conf["main"]["list"],
             access_token=conf["main"]["token"],
         )
