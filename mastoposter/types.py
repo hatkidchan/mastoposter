@@ -263,6 +263,7 @@ class Status:
     favourites_count: int
     replies_count: int
     mentions: List[Mention]
+    tags: List[Tag]
     application: Optional[Application] = None
     url: Optional[str] = None
     in_reply_to_id: Optional[str] = None
@@ -300,6 +301,7 @@ class Status:
             language=data.get("language"),
             text=data.get("text"),
             mentions=[Mention.from_dict(m) for m in data.get("mentions", [])],
+            tags=[Tag.from_dict(m) for m in data.get("tags", [])],
         )
 
     @property
