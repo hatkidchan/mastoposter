@@ -1,7 +1,7 @@
 from typing import List
 
 from mastoposter.types import Status
-from .base import FilterInstance  # NOQA
+from .base import FilterInstance
 from mastoposter.filters.boost import BoostFilter  # NOQA
 from mastoposter.filters.combined import CombinedFilter  # NOQA
 from mastoposter.filters.mention import MentionFilter  # NOQA

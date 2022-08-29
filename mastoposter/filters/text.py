@@ -16,7 +16,7 @@ class TextFilter(BaseFilter, filter_name="content"):
 
         if self.mode == "regexp":
             self.regexp = regexp(section["regexp"])
-        elif self.mode == "hashtag":
+        elif self.mode in ("hashtag", "tag"):
             self.tags = set(section["tags"].split())
         else:
             raise ValueError(f"Invalid filter mode {self.mode}")
@@ -46,6 +46,7 @@ class TextFilter(BaseFilter, filter_name="content"):
                 is not None
             )
         elif self.tags:
+            print(f"{self.tags=} {source.tags=}")
             return len(self.tags & {t.name for t in source.tags}) > 0
         else:
             raise ValueError("Neither regexp or tags were set. Why?")

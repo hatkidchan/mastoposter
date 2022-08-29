@@ -10,7 +10,7 @@ class BoostFilter(BaseFilter, filter_name="boost"):
         self.list = section.get("list", "").split()
 
     @classmethod
-    def check_account(cls, acct: str, mask: str):
+    def check_account(cls, acct: str, mask: str) -> bool:
         return fnmatch(acct, mask)
 
     def __call__(self, status: Status) -> bool:
@@ -20,7 +20,7 @@ class BoostFilter(BaseFilter, filter_name="boost"):
             return True
         return any(
             [
-                self.check_account(status.reblog.account.acct, mask)
+                self.check_account("@" + status.reblog.account.acct, mask)
                 for mask in self.list
             ]
         )

@@ -14,8 +14,8 @@ class MentionFilter(BaseFilter, filter_name="mention"):
         self.list = section.get("list", "").split()
 
     @classmethod
-    def check_account(cls, acct: str, mask: str):
-        return fnmatch(acct, mask)
+    def check_account(cls, acct: str, mask: str) -> bool:
+        return fnmatch("@" + acct, mask)
 
     def __call__(self, status: Status) -> bool:
         if not self.list and status.mentions:
