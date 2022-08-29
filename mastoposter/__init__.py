@@ -49,10 +49,6 @@ async def execute_integrations(
     status: Status, sinks: List[FilteredIntegration]
 ) -> List[Optional[str]]:
     return await gather(
-        *[
-            sink[0].__call__(status)
-            for sink in sinks
-            if run_filters(sink[1], status)
-        ],
+        *[sink[0](status) for sink in sinks if run_filters(sink[1], status)],
         return_exceptions=True,
     )
