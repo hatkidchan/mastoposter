@@ -25,3 +25,11 @@ class MediaFilter(BaseFilter, filter_name="media"):
         elif self.mode == "only":
             return len((types ^ self.valid_media) & types) == 0
         raise ValueError(f"{self.mode=} is not valid")
+
+    def __repr__(self):
+        return str.format(
+            "Filter:{name}(mode={mode}, media={media})",
+            name=self.filter_name,
+            mode=self.mode,
+            media=self.valid_media,
+        )

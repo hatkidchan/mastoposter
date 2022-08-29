@@ -145,7 +145,7 @@ class TelegramIntegration(BaseIntegration):
             return str.join("", map(cls.node_to_text, el.children))
         return escape(str(el))
 
-    async def post(self, status: Status) -> Optional[str]:
+    async def __call__(self, status: Status) -> Optional[str]:
         source = status.reblog or status
         text = self.node_to_text(
             BeautifulSoup(source.content, features="lxml")

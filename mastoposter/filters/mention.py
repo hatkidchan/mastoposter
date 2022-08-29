@@ -18,6 +18,8 @@ class MentionFilter(BaseFilter, filter_name="mention"):
         return fnmatch(acct, mask)
 
     def __call__(self, status: Status) -> bool:
+        if not self.list and status.mentions:
+            return True
         return any(
             (
                 any(
@@ -26,4 +28,9 @@ class MentionFilter(BaseFilter, filter_name="mention"):
                 )
                 for mention in status.mentions
             )
+        )
+
+    def __repr__(self):
+        return str.format(
+            "Filter:{name}({list!r})", name=self.filter_name, list=self.list
         )

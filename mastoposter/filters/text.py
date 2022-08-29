@@ -49,3 +49,17 @@ class TextFilter(BaseFilter, filter_name="content"):
             return len(self.tags & {t.name for t in source.tags}) > 0
         else:
             raise ValueError("Neither regexp or tags were set. Why?")
+
+    def __repr__(self):
+        if self.regexp is not None:
+            return str.format(
+                "Filter:{name}(regexp={regex!r})",
+                name=self.filter_name,
+                regex=self.regexp.pattern,
+            )
+        elif self.tags:
+            return str.format(
+                "Filter:{name}(tags={tags!r})",
+                name=self.filter_name,
+                tags=self.tags,
+            )

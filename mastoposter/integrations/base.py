@@ -10,5 +10,5 @@ class BaseIntegration(ABC):
         pass
 
     @abstractmethod
-    async def post(self, status: Status) -> Optional[str]:
+    async def __call__(self, status: Status) -> Optional[str]:
         raise NotImplementedError

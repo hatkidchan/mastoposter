@@ -71,7 +71,7 @@ class DiscordIntegration(BaseIntegration):
                 )
             ).json()
 
-    async def post(self, status: Status) -> Optional[str]:
+    async def __call__(self, status: Status) -> Optional[str]:
         source = status.reblog or status
         embeds: List[DiscordEmbed] = []
 

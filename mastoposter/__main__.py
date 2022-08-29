@@ -2,15 +2,15 @@
 from asyncio import run
 from configparser import ConfigParser
 from mastoposter import execute_integrations, load_integrations_from
+from mastoposter.integrations import FilteredIntegration
 from mastoposter.sources import websocket_source
 from typing import AsyncGenerator, Callable, List
-from mastoposter.integrations.base import BaseIntegration
 from mastoposter.types import Status
 
 
 async def listen(
     source: Callable[..., AsyncGenerator[Status, None]],
-    drains: List[BaseIntegration],
+    drains: List[FilteredIntegration],
     user: str,
     /,
     **kwargs,
@@ -48,7 +48,7 @@ def main(config_path: str):
         for k in _remove:
             del conf[section][k]
 
-    modules = load_integrations_from(conf)
+    modules: List[FilteredIntegration] = load_integrations_from(conf)
 
     url = "wss://{}/api/v1/streaming".format(conf["main"]["instance"])
     run(
