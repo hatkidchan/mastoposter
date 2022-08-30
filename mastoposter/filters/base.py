@@ -57,5 +57,5 @@ class BaseFilter(ABC):
     def new_instance(cls, name: str, section: SectionProxy) -> FilterInstance:
         return FilterInstance(
             inverse=name[:1] in "~!",
-            filter=cls.load_filter(name.lstrip("~!"), section),
+            filter=cls.load_filter(section["type"], section),
         )
