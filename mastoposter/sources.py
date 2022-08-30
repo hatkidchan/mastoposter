@@ -21,6 +21,6 @@ async def websocket_source(
                         raise Exception(event["error"])
                     if event["event"] == "update":
                         yield Status.from_dict(loads(event["payload"]))
-        except WebSocketException:
+        except (WebSocketException, TimeoutError):
             if not reconnect:
                 raise
