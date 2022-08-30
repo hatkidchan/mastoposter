@@ -15,7 +15,7 @@ async def websocket_source(
     while True:
         try:
             async with connect(url) as ws:
-                while (msg := await ws.recv()) != None:
+                while (msg := await ws.recv()) is not None:
                     event = loads(msg)
                     if "error" in event:
                         raise Exception(event["error"])

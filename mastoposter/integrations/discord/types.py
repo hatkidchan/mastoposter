@@ -68,7 +68,9 @@ class DiscordEmbed:
             "title": self.title,
             "description": self.description,
             "url": self.url,
-            "timestamp": _f(datetime.isoformat, self.timestamp, "T", "seconds"),
+            "timestamp": _f(
+                datetime.isoformat, self.timestamp, "T", "seconds"
+            ),
             "color": self.color,
             "footer": _f(asdict, self.footer),
             "image": _f(asdict, self.image),

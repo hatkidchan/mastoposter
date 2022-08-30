@@ -1,6 +1,25 @@
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Optional, List, Literal
+from typing import Any, Callable, Optional, List, Literal, TypeVar
+
+
+def _date(val: str) -> datetime:
+    return datetime.fromisoformat(val.rstrip("Z"))
+
+
+T = TypeVar("T")
+
+
+def _fnil(fn: Callable[[Any], T], val: Optional[Any]) -> Optional[T]:
+    return None if val is None else fn(val)
+
+
+def _date_or_none(val: Optional[str]) -> Optional[datetime]:
+    return _fnil(_date, val)
+
+
+def _int_or_none(val: Optional[str]) -> Optional[int]:
+    return _fnil(int, val)
 
 
 @dataclass
@@ -14,11 +33,7 @@ class Field:
         return cls(
             name=data["name"],
             value=data["value"],
-            verified_at=(
-                datetime.fromisoformat(data["verified_at"].rstrip("Z"))
-                if data.get("verified_at") is not None
-                else None
-            ),
+            verified_at=_date_or_none(data.get("verified_at")),
         )
 
 
@@ -74,17 +89,13 @@ class Account:
             header_static=data["header_static"],
             locked=data["locked"],
             emojis=list(map(Emoji.from_dict, data["emojis"])),
-            discoverable=data["discoverable"],
-            created_at=datetime.fromisoformat(data["created_at"].rstrip("Z")),
-            last_status_at=datetime.fromisoformat(data["last_status_at"].rstrip("Z")),
+            discoverable=data.get("discoverable", False),
+            created_at=_date(data["created_at"]),
+            last_status_at=_date(data["last_status_at"]),
             statuses_count=data["statuses_count"],
             followers_count=data["followers_count"],
             following_count=data["following_count"],
-            moved=(
-                Account.from_dict(data["moved"])
-                if data.get("moved") is not None
-                else None
-            ),
+            moved=_fnil(Account.from_dict, data.get("moved")),
             fields=list(map(Field.from_dict, data.get("fields", []))),
             bot=bool(data.get("bot")),
         )
@@ -228,19 +239,11 @@ class Poll:
     def from_dict(cls, data: dict) -> "Poll":
         return cls(
             id=data["id"],
-            expires_at=(
-                datetime.fromisoformat(data["expires_at"].rstrip("Z"))
-                if data.get("expires_at") is not None
-                else None
-            ),
+            expires_at=_date_or_none(data.get("expires_at")),
             expired=data["expired"],
             multiple=data["multiple"],
             votes_count=data["votes_count"],
-            voters_count=(
-                int(data["voters_count"])
-                if data.get("voters_count") is not None
-                else None
-            ),
+            voters_count=_int_or_none(data.get("voters_count")),
             options=[cls.PollOption(**opt) for opt in data["options"]],
         )
 
@@ -259,6 +262,8 @@ class Status:
     reblogs_count: int
     favourites_count: int
     replies_count: int
+    mentions: List[Mention]
+    tags: List[Tag]
     application: Optional[Application] = None
     url: Optional[str] = None
     in_reply_to_id: Optional[str] = None
@@ -274,7 +279,7 @@ class Status:
         return cls(
             id=data["id"],
             uri=data["uri"],
-            created_at=datetime.fromisoformat(data["created_at"].rstrip("Z")),
+            created_at=_date(data["created_at"]),
             account=Account.from_dict(data["account"]),
             content=data["content"],
             visibility=data["visibility"],
@@ -283,28 +288,20 @@ class Status:
             media_attachments=list(
                 map(Attachment.from_dict, data["media_attachments"])
             ),
-            application=(
-                Application.from_dict(data["application"])
-                if data.get("application") is not None
-                else None
-            ),
+            application=_fnil(Application.from_dict, data.get("application")),
             reblogs_count=data["reblogs_count"],
             favourites_count=data["favourites_count"],
             replies_count=data["replies_count"],
             url=data.get("url"),
             in_reply_to_id=data.get("in_reply_to_id"),
             in_reply_to_account_id=data.get("in_reply_to_account_id"),
-            reblog=(
-                Status.from_dict(data["reblog"])
-                if data.get("reblog") is not None
-                else None
-            ),
-            poll=(
-                Poll.from_dict(data["poll"]) if data.get("poll") is not None else None
-            ),
+            reblog=_fnil(Status.from_dict, data.get("reblog")),
+            poll=_fnil(Poll.from_dict, data.get("poll")),
             card=data.get("card"),
             language=data.get("language"),
             text=data.get("text"),
+            mentions=[Mention.from_dict(m) for m in data.get("mentions", [])],
+            tags=[Tag.from_dict(m) for m in data.get("tags", [])],
         )
 
     @property

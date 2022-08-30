@@ -1,33 +1,54 @@
 from asyncio import gather
 from configparser import ConfigParser
-from typing import List, Optional
+from typing import Dict, List, Optional
+from mastoposter.filters import run_filters
+from mastoposter.filters.base import BaseFilter, FilterInstance
 
-from mastoposter.integrations.base import BaseIntegration
-from mastoposter.integrations import DiscordIntegration, TelegramIntegration
+from mastoposter.integrations import (
+    DiscordIntegration,
+    FilteredIntegration,
+    TelegramIntegration,
+)
 from mastoposter.types import Status
 
 
-def load_integrations_from(config: ConfigParser) -> List[BaseIntegration]:
-    modules: List[BaseIntegration] = []
+def load_integrations_from(config: ConfigParser) -> List[FilteredIntegration]:
+    modules: List[FilteredIntegration] = []
     for module_name in config.get("main", "modules").split():
-        module = config[f"module/{module_name}"]
-        if module["type"] == "telegram":
+        mod = config[f"module/{module_name}"]
+
+        filters: Dict[str, FilterInstance] = {}
+        for filter_name in mod.get("filters", "").split():
+            filter_basename = filter_name.lstrip("~!")
+
+            filters[filter_basename] = BaseFilter.new_instance(
+                filter_name, config[f"filter/{filter_basename}"]
+            )
+
+        for finst in list(filters.values()):
+            finst.filter.post_init(filters, config)
+
+        if mod["type"] == "telegram":
             modules.append(
-                TelegramIntegration(
-                    token=module["token"],
-                    chat_id=module["chat"],
-                    show_post_link=module.getboolean("show_post_link", fallback=True),
-                    show_boost_from=module.getboolean("show_boost_from", fallback=True),
+                FilteredIntegration(
+                    TelegramIntegration(mod), list(filters.values())
                 )
             )
-        elif module["type"] == "discord":
-            modules.append(DiscordIntegration(webhook=module["webhook"]))
+        elif mod["type"] == "discord":
+            modules.append(
+                FilteredIntegration(
+                    DiscordIntegration(mod), list(filters.values())
+                )
+            )
         else:
-            raise ValueError("Invalid module type %r" % module["type"])
+            raise ValueError("Invalid module type %r" % mod["type"])
     return modules
 
 
 async def execute_integrations(
-    status: Status, sinks: List[BaseIntegration]
+    status: Status, sinks: List[FilteredIntegration]
 ) -> List[Optional[str]]:
-    return await gather(*[sink.post(status) for sink in sinks], return_exceptions=True)
+    return await gather(
+        *[sink[0](status) for sink in sinks if run_filters(sink[1], status)],
+        return_exceptions=True,
+    )

@@ -1,3 +1,4 @@
+from configparser import SectionProxy
 from typing import List, Optional
 from bs4 import BeautifulSoup, PageElement, Tag
 from httpx import AsyncClient
@@ -12,8 +13,8 @@ from mastoposter.types import Status
 
 
 class DiscordIntegration(BaseIntegration):
-    def __init__(self, webhook: str):
-        self.webhook = webhook
+    def __init__(self, section: SectionProxy):
+        self.webhook = section.get("webhook", "")
 
     @staticmethod
     def md_escape(text: str) -> str:
@@ -33,11 +34,15 @@ class DiscordIntegration(BaseIntegration):
         if isinstance(el, Tag):
             if el.name == "a":
                 return "[%s](%s)" % (
-                    cls.md_escape(str.join("", map(cls.node_to_text, el.children))),
+                    cls.md_escape(
+                        str.join("", map(cls.node_to_text, el.children))
+                    ),
                     el.attrs["href"],
                 )
             elif el.name == "p":
-                return str.join("", map(cls.node_to_text, el.children)) + "\n\n"
+                return (
+                    str.join("", map(cls.node_to_text, el.children)) + "\n\n"
+                )
             elif el.name == "br":
                 return "\n"
             return str.join("", map(cls.node_to_text, el.children))
@@ -66,16 +71,20 @@ class DiscordIntegration(BaseIntegration):
                 )
             ).json()
 
-    async def post(self, status: Status) -> Optional[str]:
+    async def __call__(self, status: Status) -> Optional[str]:
         source = status.reblog or status
         embeds: List[DiscordEmbed] = []
 
-        text = self.node_to_text(BeautifulSoup(source.content, features="lxml"))
+        text = self.node_to_text(
+            BeautifulSoup(source.content, features="lxml")
+        )
         if source.spoiler_text:
             text = f"{source.spoiler_text}\n||{text}||"
 
         if status.reblog is not None:
-            title = f"@{status.account.acct} boosted from @{source.account.acct}"
+            title = (
+                f"@{status.account.acct} boosted from @{source.account.acct}"
+            )
         else:
             title = f"@{status.account.acct} posted"
 
