@@ -4,4 +4,5 @@ config-*.ini
 venv
 
 # :3
-tmp.py
+tmp*.py
+test-data

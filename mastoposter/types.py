@@ -89,7 +89,7 @@ class Account:
             header_static=data["header_static"],
             locked=data["locked"],
             emojis=list(map(Emoji.from_dict, data["emojis"])),
-            discoverable=data["discoverable"],
+            discoverable=data.get("discoverable", False),
             created_at=_date(data["created_at"]),
             last_status_at=_date(data["last_status_at"]),
             statuses_count=data["statuses_count"],
