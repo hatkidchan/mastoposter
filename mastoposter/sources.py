@@ -1,3 +1,4 @@
+from asyncio import exceptions
 from json import loads
 from typing import AsyncGenerator
 from urllib.parse import urlencode
@@ -21,6 +22,6 @@ async def websocket_source(
                         raise Exception(event["error"])
                     if event["event"] == "update":
                         yield Status.from_dict(loads(event["payload"]))
-        except (WebSocketException, TimeoutError):
+        except (WebSocketException, TimeoutError, exceptions.TimeoutError):
             if not reconnect:
                 raise
