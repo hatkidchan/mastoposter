@@ -58,9 +58,9 @@ class TelegramIntegration(BaseIntegration):
         self.token = sect.get("token", "")
         self.chat_id = sect.get("chat", "")
         self.silent = sect.getboolean("silent", True)
-        self.template: Template = Template(emojize(
-            sect.get("template", DEFAULT_TEMPLATE)
-        ))
+        self.template: Template = Template(
+            emojize(sect.get("template", DEFAULT_TEMPLATE))
+        )
 
     async def _tg_request(self, method: str, **kwargs) -> TGResponse:
         url = API_URL.format(self.token, method)
