@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 from asyncio import run
-from configparser import ConfigParser
+from configparser import ConfigParser, ExtendedInterpolation
 from mastoposter import execute_integrations, load_integrations_from
 from mastoposter.integrations import FilteredIntegration
 from mastoposter.sources import websocket_source
@@ -34,7 +34,7 @@ async def listen(
 
 
 def main(config_path: str):
-    conf = ConfigParser()
+    conf = ConfigParser(interpolation=ExtendedInterpolation())
     conf.read(config_path)
 
     for section in conf.sections():

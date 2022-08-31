@@ -45,9 +45,10 @@ DEFAULT_TEMPLATE: str = """\
 Boost from <a href="{{status.reblog.account.url}}">\
 {{status.reblog.account.name}}</a>\
 {% endif %}\
-{% if status.spoiler_text %}{{status.spoiler_text}}
-<tg-spoiler>{% endif %}{{ status.content_flathtml }}\
-{% if status.spoiler_text %}</tg-spoiler>{% endif %}
+{% if status.reblog_or_status.spoiler_text %}\
+{{status.reblog_or_status.spoiler_text}}
+<tg-spoiler>{% endif %}{{ status.reblog_or_status.content_flathtml }}\
+{% if status.reblog_or_status.spoiler_text %}</tg-spoiler>{% endif %}
 
 <a href="{{status.link}}">Link to post</a>"""
 
@@ -56,10 +57,10 @@ class TelegramIntegration(BaseIntegration):
     def __init__(self, sect: SectionProxy):
         self.token = sect.get("token", "")
         self.chat_id = sect.get("chat", "")
-        self.show_post_link = sect.getboolean("show_post_link", True)
-        self.show_boost_from = sect.getboolean("show_boost_from", True)
         self.silent = sect.getboolean("silent", True)
-        self.template = Template(sect.get("template", DEFAULT_TEMPLATE))
+        self.template: Template = Template(
+            sect.get("template", DEFAULT_TEMPLATE)
+        )
 
     async def _tg_request(self, method: str, **kwargs) -> TGResponse:
         url = API_URL.format(self.token, method)
@@ -181,12 +182,6 @@ class TelegramIntegration(BaseIntegration):
         return (
             "<TelegramIntegration "
             "chat_id={chat!r} "
-            "show_post_link={show_post_link!r} "
-            "show_boost_from={show_boost_from!r} "
+            "template={template!r} "
             "silent={silent!r}>"
-        ).format(
-            chat=self.chat_id,
-            show_post_link=self.show_post_link,
-            show_boost_from=self.show_boost_from,
-            silent=self.silent,
-        )
+        ).format(chat=self.chat_id, silent=self.silent, template=self.template)

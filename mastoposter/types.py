@@ -313,6 +313,10 @@ class Status:
         )
 
     @property
+    def reblog_or_status(self) -> "Status":
+        return self.reblog or self
+
+    @property
     def link(self) -> str:
         return self.account.url + "/" + str(self.id)
 
