@@ -20,7 +20,7 @@ async def listen(
             continue
 
         # TODO: add option/filter to handle that
-        if status.visibility in ("direct", "private"):
+        if status.visibility in ("direct",):
             continue
 
         # TODO: find a better way to handle threads
