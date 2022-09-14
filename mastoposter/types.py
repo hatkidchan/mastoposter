@@ -51,7 +51,9 @@ class Emoji:
 
     @classmethod
     def from_dict(cls, data: dict) -> "Emoji":
-        return cls(**{f.name: data[f.name] for f in fields(cls) if f in data})
+        return cls(
+            **{f.name: data[f.name] for f in fields(cls) if f.name in data}
+        )
 
 
 @dataclass
@@ -130,7 +132,7 @@ class AttachmentMetaImage:
     @classmethod
     def from_dict(cls, data: dict) -> "AttachmentMetaImage":
         return cls(
-            **{f.name: data[f.name] for f in fields(cls) if f in data},
+            **{f.name: data[f.name] for f in fields(cls) if f.name in data},
             original=cls.AttachmentMetaImageDimensions(**data["original"]),
             small=cls.AttachmentMetaImageDimensions(**data["small"]),
             focus=cls.Vec2F(**data["focus"])
@@ -191,7 +193,9 @@ class Attachment:
 
     @classmethod
     def from_dict(cls, data: dict) -> "Attachment":
-        return cls(**{f.name: data[f.name] for f in fields(cls) if f in data})
+        return cls(
+            **{f.name: data[f.name] for f in fields(cls) if f.name in data}
+        )
 
 
 @dataclass
@@ -202,7 +206,9 @@ class Application:
 
     @classmethod
     def from_dict(cls, data: dict) -> "Application":
-        return cls(**{f.name: data[f.name] for f in fields(cls) if f in data})
+        return cls(
+            **{f.name: data[f.name] for f in fields(cls) if f.name in data}
+        )
 
 
 @dataclass
@@ -214,7 +220,9 @@ class Mention:
 
     @classmethod
     def from_dict(cls, data: dict) -> "Mention":
-        return cls(**{f.name: data[f.name] for f in fields(cls) if f in data})
+        return cls(
+            **{f.name: data[f.name] for f in fields(cls) if f.name in data}
+        )
 
 
 @dataclass
@@ -224,7 +232,9 @@ class Tag:
 
     @classmethod
     def from_dict(cls, data: dict) -> "Tag":
-        return cls(**{f.name: data[f.name] for f in fields(cls) if f in data})
+        return cls(
+            **{f.name: data[f.name] for f in fields(cls) if f.name in data}
+        )
 
 
 @dataclass
