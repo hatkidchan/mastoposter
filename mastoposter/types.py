@@ -2,6 +2,10 @@ from dataclasses import dataclass, field, fields
 from datetime import datetime
 from typing import Any, Callable, Optional, List, Literal, TypeVar
 
+from bs4 import BeautifulSoup
+
+from mastoposter.utils import node_to_html, node_to_markdown, node_to_plaintext
+
 
 def _date(val: str) -> datetime:
     return datetime.fromisoformat(val.rstrip("Z"))
@@ -99,6 +103,10 @@ class Account:
             fields=list(map(Field.from_dict, data.get("fields", []))),
             bot=bool(data.get("bot")),
         )
+
+    @property
+    def name(self) -> str:
+        return self.display_name or self.username
 
 
 @dataclass
@@ -305,5 +313,27 @@ class Status:
         )
 
     @property
+    def reblog_or_status(self) -> "Status":
+        return self.reblog or self
+
+    @property
     def link(self) -> str:
         return self.account.url + "/" + str(self.id)
+
+    @property
+    def content_flathtml(self) -> str:
+        return node_to_html(
+            BeautifulSoup(self.content, features="lxml")
+        ).rstrip()
+
+    @property
+    def content_markdown(self) -> str:
+        return node_to_markdown(
+            BeautifulSoup(self.content, features="lxml")
+        ).rstrip()
+
+    @property
+    def content_plaintext(self) -> str:
+        return node_to_plaintext(
+            BeautifulSoup(self.content, features="lxml")
+        ).rstrip()

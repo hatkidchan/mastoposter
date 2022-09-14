@@ -1,11 +1,11 @@
 from configparser import SectionProxy
 from dataclasses import dataclass
-from html import escape
 from typing import Any, List, Mapping, Optional
-from bs4 import BeautifulSoup, Tag, PageElement
 from httpx import AsyncClient
+from jinja2 import Template
 from mastoposter.integrations.base import BaseIntegration
 from mastoposter.types import Attachment, Poll, Status
+from emoji import emojize
 
 
 @dataclass
@@ -25,32 +25,45 @@ class TGResponse:
         )
 
 
-class TelegramIntegration(BaseIntegration):
-    API_URL: str = "https://api.telegram.org/bot{}/{}"
-    MEDIA_COMPATIBILITY: Mapping[str, set] = {
-        "image": {"image", "video"},
-        "video": {"image", "video"},
-        "gifv": {"gifv"},
-        "audio": {"audio"},
-        "unknown": {"unknown"},
-    }
-    MEDIA_MAPPING: Mapping[str, str] = {
-        "image": "photo",
-        "video": "video",
-        "gifv": "animation",
-        "audio": "audio",
-        "unknown": "document",
-    }
+API_URL: str = "https://api.telegram.org/bot{}/{}"
+MEDIA_COMPATIBILITY: Mapping[str, set] = {
+    "image": {"image", "video"},
+    "video": {"image", "video"},
+    "gifv": {"gifv"},
+    "audio": {"audio"},
+    "unknown": {"unknown"},
+}
+MEDIA_MAPPING: Mapping[str, str] = {
+    "image": "photo",
+    "video": "video",
+    "gifv": "animation",
+    "audio": "audio",
+    "unknown": "document",
+}
+DEFAULT_TEMPLATE: str = """\
+{% if status.reblog %}\
+Boost from <a href="{{status.reblog.account.url}}">\
+{{status.reblog.account.name}}</a>\
+{% endif %}\
+{% if status.reblog_or_status.spoiler_text %}\
+{{status.reblog_or_status.spoiler_text}}
+<tg-spoiler>{% endif %}{{ status.reblog_or_status.content_flathtml }}\
+{% if status.reblog_or_status.spoiler_text %}</tg-spoiler>{% endif %}
 
+<a href="{{status.link}}">Link to post</a>"""
+
+
+class TelegramIntegration(BaseIntegration):
     def __init__(self, sect: SectionProxy):
         self.token = sect.get("token", "")
         self.chat_id = sect.get("chat", "")
-        self.show_post_link = sect.getboolean("show_post_link", True)
-        self.show_boost_from = sect.getboolean("show_boost_from", True)
         self.silent = sect.getboolean("silent", True)
+        self.template: Template = Template(
+            emojize(sect.get("template", DEFAULT_TEMPLATE))
+        )
 
     async def _tg_request(self, method: str, **kwargs) -> TGResponse:
-        url = self.API_URL.format(self.token, method)
+        url = API_URL.format(self.token, method)
         async with AsyncClient() as client:
             return TGResponse.from_dict(
                 (await client.post(url, json=kwargs)).json(), kwargs
@@ -68,17 +81,17 @@ class TelegramIntegration(BaseIntegration):
 
     async def _post_media(self, text: str, media: Attachment) -> TGResponse:
         # Just to be safe
-        if media.type not in self.MEDIA_MAPPING:
+        if media.type not in MEDIA_MAPPING:
             return await self._post_plaintext(text)
 
         return await self._tg_request(
-            "send%s" % self.MEDIA_MAPPING[media.type].title(),
+            "send%s" % MEDIA_MAPPING[media.type].title(),
             parse_mode="HTML",
             disable_notification=self.silent,
             disable_web_page_preview=True,
             chat_id=self.chat_id,
             caption=text,
-            **{self.MEDIA_MAPPING[media.type]: media.url},
+            **{MEDIA_MAPPING[media.type]: media.url},
         )
 
     async def _post_mediagroup(
@@ -89,12 +102,12 @@ class TelegramIntegration(BaseIntegration):
         for attachment in media:
             if attachment.type not in allowed_medias:
                 continue
-            if attachment.type not in self.MEDIA_COMPATIBILITY:
+            if attachment.type not in MEDIA_COMPATIBILITY:
                 continue
-            allowed_medias &= self.MEDIA_COMPATIBILITY[attachment.type]
+            allowed_medias &= MEDIA_COMPATIBILITY[attachment.type]
             media_list.append(
                 {
-                    "type": self.MEDIA_MAPPING[attachment.type],
+                    "type": MEDIA_MAPPING[attachment.type],
                     "media": attachment.url,
                 }
             )
@@ -128,46 +141,10 @@ class TelegramIntegration(BaseIntegration):
             options=[opt.title for opt in poll.options],
         )
 
-    @classmethod
-    def node_to_text(cls, el: PageElement) -> str:
-        if isinstance(el, Tag):
-            if el.name == "a":
-                return '<a href="{}">{}</a>'.format(
-                    escape(el.attrs["href"]),
-                    str.join("", map(cls.node_to_text, el.children)),
-                )
-            elif el.name == "p":
-                return (
-                    str.join("", map(cls.node_to_text, el.children)) + "\n\n"
-                )
-            elif el.name == "br":
-                return "\n"
-            return str.join("", map(cls.node_to_text, el.children))
-        return escape(str(el))
-
     async def __call__(self, status: Status) -> Optional[str]:
         source = status.reblog or status
-        text = self.node_to_text(
-            BeautifulSoup(source.content, features="lxml")
-        )
-        text = text.rstrip()
 
-        if source.spoiler_text:
-            text = "Spoiler: {cw}\n<tg-spoiler>{text}</tg-spoiler>".format(
-                cw=source.spoiler_text, text=text
-            )
-
-        if self.show_post_link:
-            text += '\n\n<a href="%s">Link to post</a>' % status.link
-
-        if status.reblog and self.show_boost_from:
-            text = (
-                'Boosted post from <a href="{}">{}</a>\n'.format(
-                    source.account.url,
-                    source.account.display_name or source.account.username,
-                )
-                + text
-            )
+        text = self.template.render({"status": status})
 
         ids = []
 
@@ -205,12 +182,6 @@ class TelegramIntegration(BaseIntegration):
         return (
             "<TelegramIntegration "
             "chat_id={chat!r} "
-            "show_post_link={show_post_link!r} "
-            "show_boost_from={show_boost_from!r} "
+            "template={template!r} "
             "silent={silent!r}>"
-        ).format(
-            chat=self.chat_id,
-            show_post_link=self.show_post_link,
-            show_boost_from=self.show_boost_from,
-            silent=self.silent,
-        )
+        ).format(chat=self.chat_id, silent=self.silent, template=self.template)
