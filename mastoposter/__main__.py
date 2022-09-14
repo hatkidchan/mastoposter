@@ -5,7 +5,12 @@ from mastoposter import execute_integrations, load_integrations_from
 from mastoposter.integrations import FilteredIntegration
 from mastoposter.sources import websocket_source
 from typing import AsyncGenerator, Callable, List
-from mastoposter.types import Status
+from mastoposter.types import Account, Status
+from httpx import Client
+
+
+WSOCK_TEMPLATE = "wss://{instance}/api/v1/streaming"
+VERIFY_CREDS_TEMPLATE = "https://{instance}/api/v1/account/verify_credentials"
 
 
 async def listen(
@@ -50,12 +55,22 @@ def main(config_path: str):
 
     modules: List[FilteredIntegration] = load_integrations_from(conf)
 
+    user_id: str = conf["main"]["user"]
+    if user_id == "auto":
+        with Client() as c:
+            rq = c.get(
+                VERIFY_CREDS_TEMPLATE.format(**conf["main"]),
+                params={"access_token": conf["main"]["token"]},
+            )
+            account = Account.from_dict(rq.json())
+            user_id = account.id
+
     url = "wss://{}/api/v1/streaming".format(conf["main"]["instance"])
     run(
         listen(
             websocket_source,
             modules,
-            conf["main"]["user"],
+            user_id,
             url=url,
             reconnect=conf["main"].getboolean("auto_reconnect", False),
             list=conf["main"]["list"],

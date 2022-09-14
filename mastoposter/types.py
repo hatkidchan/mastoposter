@@ -1,4 +1,4 @@
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, fields
 from datetime import datetime
 from typing import Any, Callable, Optional, List, Literal, TypeVar
 
@@ -47,7 +47,7 @@ class Emoji:
 
     @classmethod
     def from_dict(cls, data: dict) -> "Emoji":
-        return cls(**data)
+        return cls(**{f.name: data[f.name] for f in fields(cls) if f in data})
 
 
 @dataclass
@@ -122,7 +122,7 @@ class AttachmentMetaImage:
     @classmethod
     def from_dict(cls, data: dict) -> "AttachmentMetaImage":
         return cls(
-            **data,
+            **{f.name: data[f.name] for f in fields(cls) if f in data},
             original=cls.AttachmentMetaImageDimensions(**data["original"]),
             small=cls.AttachmentMetaImageDimensions(**data["small"]),
             focus=cls.Vec2F(**data["focus"])
@@ -183,7 +183,7 @@ class Attachment:
 
     @classmethod
     def from_dict(cls, data: dict) -> "Attachment":
-        return cls(**data)
+        return cls(**{f.name: data[f.name] for f in fields(cls) if f in data})
 
 
 @dataclass
@@ -194,7 +194,7 @@ class Application:
 
     @classmethod
     def from_dict(cls, data: dict) -> "Application":
-        return cls(**data)
+        return cls(**{f.name: data[f.name] for f in fields(cls) if f in data})
 
 
 @dataclass
@@ -206,7 +206,7 @@ class Mention:
 
     @classmethod
     def from_dict(cls, data: dict) -> "Mention":
-        return cls(**data)
+        return cls(**{f.name: data[f.name] for f in fields(cls) if f in data})
 
 
 @dataclass
@@ -216,7 +216,7 @@ class Tag:
 
     @classmethod
     def from_dict(cls, data: dict) -> "Tag":
-        return cls(**data)
+        return cls(**{f.name: data[f.name] for f in fields(cls) if f in data})
 
 
 @dataclass
