@@ -10,7 +10,7 @@ from httpx import Client
 
 
 WSOCK_TEMPLATE = "wss://{instance}/api/v1/streaming"
-VERIFY_CREDS_TEMPLATE = "https://{instance}/api/v1/account/verify_credentials"
+VERIFY_CREDS_TEMPLATE = "https://{instance}/api/v1/accounts/verify_credentials"
 
 
 async def listen(
