@@ -137,7 +137,7 @@ class TelegramIntegration(BaseIntegration):
             chat_id=self.chat_id,
             question=f"Poll:{poll.id}",
             reply_to_message_id=reply_to,
-            allow_multiple_answers=poll.multiple,
+            allows_multiple_answers=poll.multiple,
             options=[opt.title for opt in poll.options],
         )
 
