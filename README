@@ -1,10 +1,59 @@
-mastoreposter - easy-to-use mastodon-to-[everything] reposter!
+# mastoposter - easy-to-use mastodon-to-[everything] reposter!
 
-# TODO: readme
+Mastoposter is a simple zero-headache* service that forwards your toots from any
+Mastodon-compatible Fediverse software (Pleroma also works!) to any of your
+other services! For now it supports only Discord webhooks and Telegram, but it
+can be easily extended to support pretty much anything!
 
-Configuration: check `config.ini`
-Run:
-    python3 -m virtualenv venv
-    source venv/bin/activate
-    pip install -r ./requirements.txt
-    python3 -m mastoreposter config.ini
+## Installation
+
+You can run it either on your host machine, or inside a Docker container.
+In any case, you have to clone that repo first in order to do anything:
+```sh
+git clone https://github.com/hatkidchan/mastoposter && cd mastoposter
+```
+
+After that, you can either run it in Docker, set up a standalone systemd
+service, or just run it as it is!
+
+### Docker:
+
+```sh
+docker build -t mastoposter .
+docker run --restart=always -dv /path/to/config.ini:/config.ini:ro --name mastoposter mastoposter
+```
+
+And you should be good to go
+
+### Systemd
+
+Let's say that you've cloned that repo to the `$MASTOPOSTER_ROOT`, then
+configuration should look something like that:
+
+```systemd
+[Unit]
+Description=Crossposter from Mastodon
+After=network.target
+
+[Service]
+Type=simple
+User=$MASTOPOSTER_USER
+ExecStart=/usr/bin/python3 -m mastoposter config.ini
+WorkingDirectory=$MASTOPOSTER_ROOT
+Restart=on-failure
+
+[Install]
+WantedBy=network.target
+```
+
+Before running it though, don't forget to install dependencies from the 
+./requirements.txt, but it's a good idea to use a virtual environment for that.
+Though, that's outside of the scope of that, so I won't cover it here.
+
+### Running manually
+Just be in the folder with it, have dependencies installed and run:
+python3 -m mastoposter config.ini
+
+## Configuration
+
+WIP, there's a lot to cover
