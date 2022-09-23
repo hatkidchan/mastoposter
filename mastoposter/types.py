@@ -110,6 +110,15 @@ class Account:
     def name(self) -> str:
         return self.display_name or self.username
 
+    @property
+    def name_emojiless(self) -> str:
+        if not self.display_name:
+            return self.username
+        name = self.display_name
+        for emoji in self.emojis:
+            name = name.replace(":%s:" % emoji.shortcode, "")
+        return name.strip() or self.username
+
 
 @dataclass
 class AttachmentMetaImage:
