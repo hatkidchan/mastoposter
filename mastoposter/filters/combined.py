@@ -13,8 +13,8 @@ class CombinedFilter(BaseFilter, filter_name="combined"):
 
     def __init__(self, section: SectionProxy):
         self.filter_names = section.get("filters", "").split()
-        self.operator = self.OPERATORS[section.get("operator", "and")]
-        self._operator_name = section.get("operator", "and")
+        self.operator = self.OPERATORS[section.get("operator", "all")]
+        self._operator_name = section.get("operator", "all")
         self.filters: List[FilterInstance] = []
 
     def post_init(
