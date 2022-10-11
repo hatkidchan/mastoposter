@@ -1,4 +1,5 @@
 from html import escape
+from typing import Callable, Dict
 from bs4.element import Tag, PageElement
 
 
@@ -16,31 +17,119 @@ def md_escape(text: str) -> str:
 
 
 def node_to_html(el: PageElement) -> str:
+    TAG_TRANSFORMS: Dict[str, Callable[[Tag,], str]] = {
+        "a": lambda tag: '<a href="{}">{}</a>'.format(
+            escape(tag.attrs["href"]),
+            str.join("", map(node_to_html, tag.children)),
+        ),
+        "p": lambda tag: (
+            str.join("", map(node_to_html, tag.children)) + "\n\n"
+        ),
+        "i": lambda tag: (
+            "<i>%s</i>" % str.join("", map(node_to_html, tag.children))
+        ),
+        "b": lambda tag: (
+            "<b>%s</b>" % str.join("", map(node_to_html, tag.children))
+        ),
+        "s": lambda tag: (
+            "<s>%s</s>" % str.join("", map(node_to_html, tag.children))
+        ),
+        "u": lambda tag: (
+            "<u>%s</u>" % str.join("", map(node_to_html, tag.children))
+        ),
+        "pre": lambda tag: (
+            "\n<pre>%s</pre>\n" % str.join("", map(node_to_html, tag.children))
+        ),
+        "code": lambda tag: (
+            "<code>%s</code>" % str.join("", map(node_to_html, tag.children))
+        ),
+        "blockquote": lambda tag: "\n%s"
+        % str.join(
+            "\n",
+            (
+                "| %s" % part
+                for part in str.join(
+                    "", map(node_to_html, tag.children)
+                ).split("\n")
+            ),
+        ),
+        "br": lambda _: "\n",
+    }
+
+    TAG_SUBSTITUTIONS: Dict[str, str] = {
+        "strong": "b",
+        "em": "i",
+        "del": "s",
+        "ins": "u",
+    }
+
     if isinstance(el, Tag):
-        if el.name == "a":
-            return '<a href="{}">{}</a>'.format(
-                escape(el.attrs["href"]),
-                str.join("", map(node_to_html, el.children)),
-            )
-        elif el.name == "p":
-            return str.join("", map(node_to_html, el.children)) + "\n\n"
-        elif el.name == "br":
-            return "\n"
+        if el.name in TAG_TRANSFORMS:
+            return TAG_TRANSFORMS[el.name](el)
+        if el.name in TAG_SUBSTITUTIONS:
+            sub = TAG_SUBSTITUTIONS[el.name]
+            if sub in TAG_TRANSFORMS:
+                return TAG_TRANSFORMS[sub](el)
         return str.join("", map(node_to_html, el.children))
     return escape(str(el))
 
 
 def node_to_markdown(el: PageElement) -> str:
-    if isinstance(el, Tag):
-        if el.name == "a":
-            return "[%s](%s)" % (
-                md_escape(str.join("", map(node_to_markdown, el.children))),
-                el.attrs["href"],
+    TAG_TRANSFORMS: Dict[str, Callable[[Tag,], str]] = {
+        "a": lambda tag: "[{}]({})".format(
+            md_escape(str.join("", map(node_to_markdown, tag.children))),
+            tag.attrs["href"],
+        ),
+        "p": lambda tag: (
+            str.join("", map(node_to_markdown, tag.children)) + "\n\n"
+        ),
+        "i": lambda tag: (
+            "_%s_" % str.join("", map(node_to_markdown, tag.children))
+        ),
+        "b": lambda tag: (
+            "*%s*" % str.join("", map(node_to_markdown, tag.children))
+        ),
+        "s": lambda tag: (
+            "~%s~" % str.join("", map(node_to_markdown, tag.children))
+        ),
+        "u": lambda tag: (
+            "__%s__" % str.join("", map(node_to_markdown, tag.children))
+        ),
+        "pre": lambda tag: (
+            "\n``%s``\n" % str.join("", map(node_to_markdown, tag.children))
+        ),
+        "code": lambda tag: (
+            "`%s`" % str.join("", map(node_to_markdown, tag.children))
+        ),
+        "blockquote": lambda tag: (
+            "\n%s"
+            % str.join(
+                "\n",
+                (
+                    "▍%s" % part
+                    for part in str.join(
+                        "", map(node_to_markdown, tag.children)
+                    ).split("\n")
+                ),
             )
-        elif el.name == "p":
-            return str.join("", map(node_to_markdown, el.children)) + "\n\n"
-        elif el.name == "br":
-            return "\n"
+        ),
+        "br": lambda _: "\n",
+    }
+
+    TAG_SUBSTITUTIONS: Dict[str, str] = {
+        "strong": "b",
+        "em": "i",
+        "del": "s",
+        "ins": "u",
+    }
+
+    if isinstance(el, Tag):
+        if el.name in TAG_TRANSFORMS:
+            return TAG_TRANSFORMS[el.name](el)
+        if el.name in TAG_SUBSTITUTIONS:
+            sub = TAG_SUBSTITUTIONS[el.name]
+            if sub in TAG_TRANSFORMS:
+                return TAG_TRANSFORMS[sub](el)
         return str.join("", map(node_to_markdown, el.children))
     return md_escape(str(el))
 
