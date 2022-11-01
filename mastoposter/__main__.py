@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 from asyncio import run
 from configparser import ConfigParser, ExtendedInterpolation
-from logging import getLogger
+from logging import DEBUG, Formatter, StreamHandler, getLogger
+from sys import stdout
 from mastoposter import execute_integrations, load_integrations_from
 from mastoposter.integrations import FilteredIntegration
 from mastoposter.sources import websocket_source
@@ -16,6 +17,14 @@ WSOCK_TEMPLATE = "wss://{instance}/api/v1/streaming"
 VERIFY_CREDS_TEMPLATE = "https://{instance}/api/v1/accounts/verify_credentials"
 
 logger = getLogger()
+
+
+def init_logger():
+    stdout_handler = StreamHandler(stdout)
+    stdout_handler.setLevel(DEBUG)
+    formatter = Formatter("[%(asctime)s][%(levelname)5s:%(name)s] %(message)s")
+    stdout_handler.setFormatter(formatter)
+    logger.addHandler(stdout_handler)
 
 
 async def listen(
@@ -55,6 +64,7 @@ async def listen(
 
 
 def main(config_path: str):
+    init_logger()
     conf = ConfigParser(interpolation=ExtendedInterpolation())
     conf.read(config_path)
 
