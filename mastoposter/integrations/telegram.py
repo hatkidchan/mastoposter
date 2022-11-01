@@ -1,11 +1,15 @@
 from configparser import SectionProxy
 from dataclasses import dataclass
+from logging import getLogger
 from typing import Any, List, Mapping, Optional
 from httpx import AsyncClient
 from jinja2 import Template
 from mastoposter.integrations.base import BaseIntegration
 from mastoposter.types import Attachment, Poll, Status
 from emoji import emojize
+
+
+logger = getLogger(__name__)
 
 
 @dataclass
@@ -89,6 +93,7 @@ class TelegramIntegration(BaseIntegration):
             )
 
     async def _post_plaintext(self, text: str) -> TGResponse:
+        logger.debug("Sending HTML message: %r", text)
         return await self._tg_request(
             "sendMessage",
             parse_mode="HTML",
@@ -101,6 +106,9 @@ class TelegramIntegration(BaseIntegration):
     async def _post_media(self, text: str, media: Attachment) -> TGResponse:
         # Just to be safe
         if media.type not in MEDIA_MAPPING:
+            logger.warning(
+                "Media %r has unknown type, falling back to plaintext", media
+            )
             return await self._post_plaintext(text)
 
         return await self._tg_request(
@@ -116,6 +124,7 @@ class TelegramIntegration(BaseIntegration):
     async def _post_mediagroup(
         self, text: str, media: List[Attachment]
     ) -> TGResponse:
+        logger.debug("Sendind media group: %r (text=%r)", media, text)
         media_list: List[dict] = []
         allowed_medias = {"image", "gifv", "video", "audio", "unknown"}
         for attachment in media:
@@ -149,6 +158,7 @@ class TelegramIntegration(BaseIntegration):
     async def _post_poll(
         self, poll: Poll, reply_to: Optional[str] = None
     ) -> TGResponse:
+        logger.debug("Sending poll: %r", poll)
         return await self._tg_request(
             "sendPoll",
             disable_notification=self.silent,
@@ -198,9 +208,17 @@ class TelegramIntegration(BaseIntegration):
         return str.join(",", map(str, ids))
 
     def __repr__(self) -> str:
+        bot_uid, key = self.token.split(":")
         return (
             "<TelegramIntegration "
             "chat_id={chat!r} "
             "template={template!r} "
+            "token={bot_uid}:{key} "
             "silent={silent!r}>"
-        ).format(chat=self.chat_id, silent=self.silent, template=self.template)
+        ).format(
+            chat=self.chat_id,
+            silent=self.silent,
+            template=self.template,
+            bot_uid=bot_uid,
+            key=str.join("", ("X" for _ in key)),
+        )

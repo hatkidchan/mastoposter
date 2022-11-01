@@ -19,12 +19,13 @@ VERIFY_CREDS_TEMPLATE = "https://{instance}/api/v1/accounts/verify_credentials"
 logger = getLogger()
 
 
-def init_logger():
+def init_logger(loglevel: int = DEBUG):
     stdout_handler = StreamHandler(stdout)
     stdout_handler.setLevel(DEBUG)
     formatter = Formatter("[%(asctime)s][%(levelname)5s:%(name)s] %(message)s")
     stdout_handler.setFormatter(formatter)
     logger.addHandler(stdout_handler)
+    logger.setLevel(loglevel)
 
 
 async def listen(

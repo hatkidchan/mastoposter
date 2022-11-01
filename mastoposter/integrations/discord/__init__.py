@@ -1,4 +1,5 @@
 from configparser import SectionProxy
+from logging import getLogger
 from typing import List, Optional
 from httpx import AsyncClient
 from zlib import crc32
@@ -9,6 +10,8 @@ from mastoposter.integrations.discord.types import (
     DiscordEmbedImage,
 )
 from mastoposter.types import Status
+
+logger = getLogger(__name__)
 
 
 class DiscordIntegration(BaseIntegration):
@@ -35,6 +38,9 @@ class DiscordIntegration(BaseIntegration):
                 if embeds is not None
                 else [],
             }
+
+            logger.debug("Executing webhook with %r", json)
+
             return (
                 await c.post(
                     self.webhook,

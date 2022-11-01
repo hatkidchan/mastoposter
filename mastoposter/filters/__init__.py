@@ -15,7 +15,7 @@ logger = getLogger(__name__)
 
 
 def run_filters(filters: List[FilterInstance], status: Status) -> bool:
-    logger.debug("Running filters on %r", status)
+    logger.debug("Running filters on %r", status.id)
 
     if not filters:
         logger.debug("No filters, returning True")
