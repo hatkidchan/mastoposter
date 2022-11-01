@@ -1,13 +1,18 @@
 from configparser import SectionProxy
 from fnmatch import fnmatch
+from typing import List
 from mastoposter.filters.base import BaseFilter
 from mastoposter.types import Status
 
 
 class BoostFilter(BaseFilter, filter_name="boost"):
-    def __init__(self, section: SectionProxy):
-        super().__init__(section)
-        self.list = section.get("list", "").split()
+    def __init__(self, accounts: List[str]):
+        super().__init__()
+        self.list = accounts
+
+    @classmethod
+    def from_section(cls, section: SectionProxy) -> "BoostFilter":
+        return cls(section["list"].split())
 
     @classmethod
     def check_account(cls, acct: str, mask: str) -> bool:

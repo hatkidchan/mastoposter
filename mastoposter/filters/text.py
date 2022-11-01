@@ -8,18 +8,24 @@ from mastoposter.types import Status
 
 
 class TextFilter(BaseFilter, filter_name="content"):
-    def __init__(self, section: SectionProxy):
-        super().__init__(section)
-        self.mode = section["mode"]
-        self.tags: Set[str] = set()
-        self.regexp: Optional[Pattern] = None
+    def __init__(
+        self, regex: Optional[str] = None, tags: Optional[Set[str]] = None
+    ):
+        super().__init__()
+        assert regex is not None or tags
 
-        if self.mode == "regexp":
-            self.regexp = regexp(section["regexp"])
-        elif self.mode in ("hashtag", "tag"):
-            self.tags = set(map(str.lower, section["tags"].split()))
-        else:
-            raise ValueError(f"Invalid filter mode {self.mode}")
+        self.tags: Optional[Set[str]] = tags
+        self.regexp: Optional[Pattern] = regexp(regex) if regex else None
+
+    @classmethod
+    def from_section(cls, section: SectionProxy) -> "TextFilter":
+        if "regexp" in section and "tags" in section:
+            raise AssertionError("you can't use both tags and regexp")
+        elif "regexp" in section:
+            return cls(regex=section["regexp"])
+        elif "tags" in section:
+            return cls(tags=set(section["tags"].split()))
+        raise AssertionError("neither regexp or tags were set")
 
     @classmethod
     def node_to_text(cls, el: PageElement) -> str:
@@ -63,3 +69,4 @@ class TextFilter(BaseFilter, filter_name="content"):
                 name=self.filter_name,
                 tags=self.tags,
             )
+        return "Filter:{name}(invalid)".format(name=self.filter_name)

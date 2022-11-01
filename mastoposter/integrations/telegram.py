@@ -54,12 +54,31 @@ Boost from <a href="{{status.reblog.account.url}}">\
 
 
 class TelegramIntegration(BaseIntegration):
-    def __init__(self, sect: SectionProxy):
-        self.token = sect.get("token", "")
-        self.chat_id = sect.get("chat", "")
-        self.silent = sect.getboolean("silent", True)
-        self.template: Template = Template(
-            emojize(sect.get("template", DEFAULT_TEMPLATE))
+    def __init__(
+        self,
+        token: str,
+        chat_id: str,
+        template: Optional[Template] = None,
+        silent: bool = True,
+    ):
+        self.token = token
+        self.chat_id = chat_id
+        self.silent = silent
+
+        if template is None:
+            self.template = Template(emojize(DEFAULT_TEMPLATE))
+        else:
+            self.template = template
+
+    @classmethod
+    def from_section(cls, section: SectionProxy) -> "TelegramIntegration":
+        return cls(
+            token=section["token"],
+            chat_id=section["chat"],
+            silent=section.getboolean("silent", True),
+            template=Template(
+                emojize(section.get("template", DEFAULT_TEMPLATE))
+            ),
         )
 
     async def _tg_request(self, method: str, **kwargs) -> TGResponse:

@@ -12,8 +12,12 @@ from mastoposter.types import Status
 
 
 class DiscordIntegration(BaseIntegration):
-    def __init__(self, section: SectionProxy):
-        self.webhook = section.get("webhook", "")
+    def __init__(self, webhook: str):
+        self.webhook = webhook
+
+    @classmethod
+    def from_section(cls, section: SectionProxy) -> "DiscordIntegration":
+        return cls(section["webhook"])
 
     async def execute_webhook(
         self,

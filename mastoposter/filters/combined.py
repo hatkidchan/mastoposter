@@ -11,11 +11,18 @@ class CombinedFilter(BaseFilter, filter_name="combined"):
         "single": lambda d: sum(d) == 1,
     }
 
-    def __init__(self, section: SectionProxy):
-        self.filter_names = section.get("filters", "").split()
-        self.operator = self.OPERATORS[section.get("operator", "all")]
-        self._operator_name = section.get("operator", "all")
+    def __init__(self, filter_names: List[str], operator: str):
+        self.filter_names = filter_names
+        self._operator_name = operator
+        self.operator = self.OPERATORS[self._operator_name]
         self.filters: List[FilterInstance] = []
+
+    @classmethod
+    def from_section(cls, section: SectionProxy) -> "CombinedFilter":
+        return cls(
+            filter_names=section["filters"].split(),
+            operator=section.get("operator", "all"),
+        )
 
     def post_init(
         self, filters: Dict[str, FilterInstance], config: ConfigParser

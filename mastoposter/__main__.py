@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 from asyncio import run
 from configparser import ConfigParser, ExtendedInterpolation
+from logging import getLogger
 from mastoposter import execute_integrations, load_integrations_from
 from mastoposter.integrations import FilteredIntegration
 from mastoposter.sources import websocket_source
@@ -8,9 +9,13 @@ from typing import AsyncGenerator, Callable, List
 from mastoposter.types import Account, Status
 from httpx import Client
 
+from mastoposter.utils import normalize_config
+
 
 WSOCK_TEMPLATE = "wss://{instance}/api/v1/streaming"
 VERIFY_CREDS_TEMPLATE = "https://{instance}/api/v1/accounts/verify_credentials"
+
+logger = getLogger()
 
 
 async def listen(
@@ -20,12 +25,19 @@ async def listen(
     /,
     **kwargs,
 ):
+    logger.info("Starting listening...")
     async for status in source(**kwargs):
+        logger.debug("Got status: %r", status)
         if status.account.id != user:
             continue
 
         # TODO: add option/filter to handle that
         if status.visibility in ("direct",):
+            logger.info(
+                "Skipping post %s (status.visibility=%r)",
+                status.uri,
+                status.visibility,
+            )
             continue
 
         # TODO: find a better way to handle threads
@@ -33,6 +45,10 @@ async def listen(
             status.in_reply_to_account_id is not None
             and status.in_reply_to_account_id != user
         ):
+            logger.info(
+                "Skipping post %s because it's a reply to another person",
+                status.uri,
+            )
             continue
 
         await execute_integrations(status, drains)
@@ -42,21 +58,15 @@ def main(config_path: str):
     conf = ConfigParser(interpolation=ExtendedInterpolation())
     conf.read(config_path)
 
-    for section in conf.sections():
-        _remove = set()
-        for k, v in conf[section].items():
-            normalized_key = k.replace(" ", "_").replace("-", "_")
-            if k == normalized_key:
-                continue
-            conf[section][normalized_key] = v
-            _remove.add(k)
-        for k in _remove:
-            del conf[section][k]
+    normalize_config(conf)
 
     modules: List[FilteredIntegration] = load_integrations_from(conf)
 
+    logger.info("Loaded %d integrations", len(modules))
+
     user_id: str = conf["main"]["user"]
     if user_id == "auto":
+        logger.info("config.main.user is set to auto, getting user ID")
         with Client() as c:
             rq = c.get(
                 VERIFY_CREDS_TEMPLATE.format(**conf["main"]),
@@ -64,8 +74,10 @@ def main(config_path: str):
             )
             account = Account.from_dict(rq.json())
             user_id = account.id
+            logger.info("account.id=%s", user_id)
 
     url = "wss://{}/api/v1/streaming".format(conf["main"]["instance"])
+
     run(
         listen(
             websocket_source,

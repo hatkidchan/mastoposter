@@ -5,9 +5,13 @@ from mastoposter.types import Status
 
 
 class SpoilerFilter(BaseFilter, filter_name="spoiler"):
-    def __init__(self, section: SectionProxy):
-        super().__init__(section)
-        self.regexp: Pattern = regexp(section.get("regexp", "^.*$"))
+    def __init__(self, regex: str = "^.*$"):
+        super().__init__()
+        self.regexp: Pattern = regexp(regex)
+
+    @classmethod
+    def from_section(cls, section: SectionProxy) -> "SpoilerFilter":
+        return cls(section.get("regexp", section.get("regex", "^.*$")))
 
     def __call__(self, status: Status) -> bool:
         return self.regexp.match(status.spoiler_text) is not None

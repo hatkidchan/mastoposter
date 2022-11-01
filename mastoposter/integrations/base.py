@@ -6,8 +6,13 @@ from mastoposter.types import Status
 
 
 class BaseIntegration(ABC):
-    def __init__(self, section: SectionProxy):
+    # TODO: make a registry of integrations
+    def __init__(self):
         pass
+
+    @classmethod
+    def from_section(cls, section: SectionProxy) -> "BaseIntegration":
+        raise NotImplementedError
 
     @abstractmethod
     async def __call__(self, status: Status) -> Optional[str]:
