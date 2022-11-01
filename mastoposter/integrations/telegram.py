@@ -88,9 +88,13 @@ class TelegramIntegration(BaseIntegration):
     async def _tg_request(self, method: str, **kwargs) -> TGResponse:
         url = API_URL.format(self.token, method)
         async with AsyncClient() as client:
-            return TGResponse.from_dict(
+            response = TGResponse.from_dict(
                 (await client.post(url, json=kwargs)).json(), kwargs
             )
+            if not response.ok:
+                logger.error("TG error: %r", response.error)
+                logger.info("parameters: %r", kwargs)
+            return response
 
     async def _post_plaintext(self, text: str) -> TGResponse:
         logger.debug("Sending HTML message: %r", text)

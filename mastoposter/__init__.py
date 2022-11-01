@@ -65,7 +65,7 @@ def load_integrations_from(config: ConfigParser) -> List[FilteredIntegration]:
 async def execute_integrations(
     status: Status, sinks: List[FilteredIntegration]
 ) -> List[Optional[str]]:
-    logger.debug("Executing integrations...")
+    logger.info("Executing integrations...")
     return await gather(
         *[sink[0](status) for sink in sinks if run_filters(sink[1], status)],
         return_exceptions=True,

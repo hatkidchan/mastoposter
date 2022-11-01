@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 from asyncio import run
 from configparser import ConfigParser, ExtendedInterpolation
-from logging import DEBUG, Formatter, StreamHandler, getLogger
+from logging import INFO, Formatter, StreamHandler, getLogger
 from sys import stdout
 from mastoposter import execute_integrations, load_integrations_from
 from mastoposter.integrations import FilteredIntegration
@@ -19,9 +19,9 @@ VERIFY_CREDS_TEMPLATE = "https://{instance}/api/v1/accounts/verify_credentials"
 logger = getLogger()
 
 
-def init_logger(loglevel: int = DEBUG):
+def init_logger(loglevel: int = INFO):
     stdout_handler = StreamHandler(stdout)
-    stdout_handler.setLevel(DEBUG)
+    stdout_handler.setLevel(loglevel)
     formatter = Formatter("[%(asctime)s][%(levelname)5s:%(name)s] %(message)s")
     stdout_handler.setFormatter(formatter)
     logger.addHandler(stdout_handler)
@@ -39,6 +39,12 @@ async def listen(
     async for status in source(**kwargs):
         logger.debug("Got status: %r", status)
         if status.account.id != user:
+            logger.info(
+                "Skipping status %s (account.id=%r != %r)",
+                status.uri,
+                status.account.id,
+                user,
+            )
             continue
 
         # TODO: add option/filter to handle that
