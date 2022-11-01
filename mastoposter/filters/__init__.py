@@ -11,7 +11,7 @@ from mastoposter.filters.text import TextFilter  # NOQA
 from mastoposter.filters.spoiler import SpoilerFilter  # NOQA
 from mastoposter.filters.visibility import VisibilityFilter  # NOQA
 
-logger = getLogger(__name__)
+logger = getLogger("filters")
 
 
 def run_filters(filters: List[FilterInstance], status: Status) -> bool:

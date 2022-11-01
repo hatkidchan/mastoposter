@@ -12,7 +12,7 @@ class CombinedFilter(BaseFilter, filter_name="combined"):
     }
 
     def __init__(self, filter_names: List[str], operator: str):
-        self.filter_names = filter_names
+        self._filter_names = filter_names
         self._operator_name = operator
         self.operator = self.OPERATORS[self._operator_name]
         self.filters: List[FilterInstance] = []
@@ -30,7 +30,7 @@ class CombinedFilter(BaseFilter, filter_name="combined"):
         super().post_init(filters, config)
         self.filters = [
             self.new_instance(name, config["filter/" + name.lstrip("~!")])
-            for name in self.filter_names
+            for name in self._filter_names
         ]
 
     def __call__(self, post: Status) -> bool:
@@ -39,7 +39,12 @@ class CombinedFilter(BaseFilter, filter_name="combined"):
         return self.operator([f[1](post) ^ f[0] for f in self.filters])
 
     def __repr__(self):
+        if self.filters:
+            return (
+                f"Filter:combined(op={self._operator_name}, "
+                f"filters={self.filters!r})"
+            )
         return (
             f"Filter:combined(op={self._operator_name}, "
-            f"filters={self.filters!r})"
+            f"filters={self._filter_names!r}, loaded=False)"
         )

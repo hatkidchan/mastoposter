@@ -37,6 +37,7 @@ async def listen(
 ):
     logger.info("Starting listening...")
     async for status in source(**kwargs):
+        logger.info("New status: %s", status.uri)
         logger.debug("Got status: %r", status)
         if status.account.id != user:
             logger.info(
@@ -91,7 +92,8 @@ def main(config_path: str):
             )
             account = Account.from_dict(rq.json())
             user_id = account.id
-            logger.info("account.id=%s", user_id)
+
+    logger.info("account.id=%s", user_id)
 
     url = "wss://{}/api/v1/streaming".format(conf["main"]["instance"])
 

@@ -9,7 +9,7 @@ from mastoposter.types import Attachment, Poll, Status
 from emoji import emojize
 
 
-logger = getLogger(__name__)
+logger = getLogger("integrations.telegram")
 
 
 @dataclass
@@ -93,7 +93,7 @@ class TelegramIntegration(BaseIntegration):
             )
             if not response.ok:
                 logger.error("TG error: %r", response.error)
-                logger.info("parameters: %r", kwargs)
+                logger.error("parameters: %r", kwargs)
             return response
 
     async def _post_plaintext(self, text: str) -> TGResponse:
@@ -135,6 +135,11 @@ class TelegramIntegration(BaseIntegration):
             if attachment.type not in allowed_medias:
                 continue
             if attachment.type not in MEDIA_COMPATIBILITY:
+                logger.warning(
+                    "attachment %r is not in %r",
+                    attachment.type,
+                    MEDIA_COMPATIBILITY,
+                )
                 continue
             allowed_medias &= MEDIA_COMPATIBILITY[attachment.type]
             media_list.append(

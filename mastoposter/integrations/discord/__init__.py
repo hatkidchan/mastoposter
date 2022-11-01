@@ -11,7 +11,7 @@ from mastoposter.integrations.discord.types import (
 )
 from mastoposter.types import Status
 
-logger = getLogger(__name__)
+logger = getLogger("integrations.discord")
 
 
 class DiscordIntegration(BaseIntegration):

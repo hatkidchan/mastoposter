@@ -12,7 +12,7 @@ from mastoposter.integrations import (
 )
 from mastoposter.types import Status
 
-logger = getLogger(__name__)
+logger = getLogger()
 
 
 def load_integrations_from(config: ConfigParser) -> List[FilteredIntegration]:
