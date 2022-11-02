@@ -191,6 +191,19 @@ Has a single property `options` that is a space-separated list of allowed
 visibility levels. Note that `direct` visibility is always ignored so cannot
 be used here.
 
+#### `type = media`
+Filter that allows only some media types to be posted.
+
+`valid_media` is a space-separated list of media types from Mastodon API
+(`image`, `gifv`, `video`, `audio` or `unknown`). If your Fedi software has
+support for other types, they also should work.
+
+`mode` option defines the mode of operation: it can be either `include`,
+`exclude` or `only`. In case of `include`, filter will trigger when post
+has media with that type, but others are allowed as well. `exclude` is the
+opposite: if status has media with that type, filter won't trigger. `only`
+allows statuses with either no media, or listed types only.
+
 #### `type = combined`
 The most powerful filter 'cause it allows you to combine multiple filters using
 different operations.
