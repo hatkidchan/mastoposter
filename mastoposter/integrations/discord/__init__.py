@@ -41,12 +41,14 @@ class DiscordIntegration(BaseIntegration):
 
             logger.debug("Executing webhook with %r", json)
 
-            return (
+            result = (
                 await c.post(
                     self.webhook,
                     json=json,
                 )
             ).json()
+            logger.debug("Result: %r", result)
+            return result
 
     async def __call__(self, status: Status) -> Optional[str]:
         source = status.reblog or status
@@ -87,6 +89,11 @@ class DiscordIntegration(BaseIntegration):
                             url=attachment.url,
                         ),
                     )
+                )
+            else:
+                logger.warn(
+                    "Unsupported attachment %r for Discord Embed",
+                    attachment.type,
                 )
 
         await self.execute_webhook(
