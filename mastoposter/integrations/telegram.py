@@ -1,11 +1,15 @@
 from configparser import SectionProxy
 from dataclasses import dataclass
+from logging import getLogger
 from typing import Any, List, Mapping, Optional
 from httpx import AsyncClient
 from jinja2 import Template
 from mastoposter.integrations.base import BaseIntegration
 from mastoposter.types import Attachment, Poll, Status
 from emoji import emojize
+
+
+logger = getLogger("integrations.telegram")
 
 
 @dataclass
@@ -54,22 +58,49 @@ Boost from <a href="{{status.reblog.account.url}}">\
 
 
 class TelegramIntegration(BaseIntegration):
-    def __init__(self, sect: SectionProxy):
-        self.token = sect.get("token", "")
-        self.chat_id = sect.get("chat", "")
-        self.silent = sect.getboolean("silent", True)
-        self.template: Template = Template(
-            emojize(sect.get("template", DEFAULT_TEMPLATE))
+    def __init__(
+        self,
+        token: str,
+        chat_id: str,
+        template: Optional[Template] = None,
+        silent: bool = True,
+    ):
+        self.token = token
+        self.chat_id = chat_id
+        self.silent = silent
+
+        if template is None:
+            self.template = Template(emojize(DEFAULT_TEMPLATE))
+        else:
+            self.template = template
+
+    @classmethod
+    def from_section(cls, section: SectionProxy) -> "TelegramIntegration":
+        return cls(
+            token=section["token"],
+            chat_id=section["chat"],
+            silent=section.getboolean("silent", True),
+            template=Template(
+                emojize(section.get("template", DEFAULT_TEMPLATE))
+            ),
         )
 
     async def _tg_request(self, method: str, **kwargs) -> TGResponse:
         url = API_URL.format(self.token, method)
         async with AsyncClient() as client:
-            return TGResponse.from_dict(
+            logger.debug("TG request: %s(%r)", method, kwargs)
+            response = TGResponse.from_dict(
                 (await client.post(url, json=kwargs)).json(), kwargs
             )
+            if not response.ok:
+                logger.error("TG error: %r", response.error)
+                logger.error("parameters: %r", kwargs)
+            else:
+                logger.debug("Result: %r", response.result)
+            return response
 
     async def _post_plaintext(self, text: str) -> TGResponse:
+        logger.debug("Sending HTML message: %r", text)
         return await self._tg_request(
             "sendMessage",
             parse_mode="HTML",
@@ -82,6 +113,9 @@ class TelegramIntegration(BaseIntegration):
     async def _post_media(self, text: str, media: Attachment) -> TGResponse:
         # Just to be safe
         if media.type not in MEDIA_MAPPING:
+            logger.warning(
+                "Media %r has unknown type, falling back to plaintext", media
+            )
             return await self._post_plaintext(text)
 
         return await self._tg_request(
@@ -97,12 +131,18 @@ class TelegramIntegration(BaseIntegration):
     async def _post_mediagroup(
         self, text: str, media: List[Attachment]
     ) -> TGResponse:
+        logger.debug("Sendind media group: %r (text=%r)", media, text)
         media_list: List[dict] = []
         allowed_medias = {"image", "gifv", "video", "audio", "unknown"}
         for attachment in media:
             if attachment.type not in allowed_medias:
                 continue
             if attachment.type not in MEDIA_COMPATIBILITY:
+                logger.warning(
+                    "attachment %r is not in %r",
+                    attachment.type,
+                    MEDIA_COMPATIBILITY,
+                )
                 continue
             allowed_medias &= MEDIA_COMPATIBILITY[attachment.type]
             media_list.append(
@@ -130,6 +170,7 @@ class TelegramIntegration(BaseIntegration):
     async def _post_poll(
         self, poll: Poll, reply_to: Optional[str] = None
     ) -> TGResponse:
+        logger.debug("Sending poll: %r", poll)
         return await self._tg_request(
             "sendPoll",
             disable_notification=self.silent,
@@ -179,9 +220,17 @@ class TelegramIntegration(BaseIntegration):
         return str.join(",", map(str, ids))
 
     def __repr__(self) -> str:
+        bot_uid, key = self.token.split(":")
         return (
             "<TelegramIntegration "
             "chat_id={chat!r} "
             "template={template!r} "
+            "token={bot_uid}:{key} "
             "silent={silent!r}>"
-        ).format(chat=self.chat_id, silent=self.silent, template=self.template)
+        ).format(
+            chat=self.chat_id,
+            silent=self.silent,
+            template=self.template,
+            bot_uid=bot_uid,
+            key=str.join("", ("X" for _ in key)),
+        )

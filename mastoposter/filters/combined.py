@@ -11,11 +11,18 @@ class CombinedFilter(BaseFilter, filter_name="combined"):
         "single": lambda d: sum(d) == 1,
     }
 
-    def __init__(self, section: SectionProxy):
-        self.filter_names = section.get("filters", "").split()
-        self.operator = self.OPERATORS[section.get("operator", "all")]
-        self._operator_name = section.get("operator", "all")
+    def __init__(self, filter_names: List[str], operator: str):
+        self._filter_names = filter_names
+        self._operator_name = operator
+        self.operator = self.OPERATORS[self._operator_name]
         self.filters: List[FilterInstance] = []
+
+    @classmethod
+    def from_section(cls, section: SectionProxy) -> "CombinedFilter":
+        return cls(
+            filter_names=section["filters"].split(),
+            operator=section.get("operator", "all"),
+        )
 
     def post_init(
         self, filters: Dict[str, FilterInstance], config: ConfigParser
@@ -23,7 +30,7 @@ class CombinedFilter(BaseFilter, filter_name="combined"):
         super().post_init(filters, config)
         self.filters = [
             self.new_instance(name, config["filter/" + name.lstrip("~!")])
-            for name in self.filter_names
+            for name in self._filter_names
         ]
 
     def __call__(self, post: Status) -> bool:
@@ -32,7 +39,12 @@ class CombinedFilter(BaseFilter, filter_name="combined"):
         return self.operator([f[1](post) ^ f[0] for f in self.filters])
 
     def __repr__(self):
+        if self.filters:
+            return (
+                f"Filter:combined(op={self._operator_name}, "
+                f"filters={self.filters!r})"
+            )
         return (
             f"Filter:combined(op={self._operator_name}, "
-            f"filters={self.filters!r})"
+            f"filters={self._filter_names!r}, loaded=False)"
         )

@@ -104,6 +104,10 @@ connection error!!!)
 #### modules
 More about them later
 
+#### loglevel
+Self-explanatory, logging level. Can be either `DEBUG`, `INFO`, `WARNING` or
+`ERROR`. Defaults to `INFO`
+
 ### Modules
 There's two types of modules supported at this point: `telegram` and `discord`.
 Both of them are self-explanatory, but we'll go over them real quick.
@@ -175,15 +179,13 @@ expression to match your spoiler text.
 Filter to match post content against either a regular expression, or a list of
 tags. Matching is done on the plaintext version of the post.
 
-`mode` property determines the type of operation. Can be either `regexp`,
-`tag` or `hashtag` (two last ones are the same).
+You can have one of two properties (but not both because fuck you): `tags` or
+`regexp`. It's obvious what does what: if you have `regexp` set, plaintext
+version of status is checked against that regular expression, and if you have
+`tags` set, then only statuses that have those tags will be allowed.
 
-In `mode = regexp` you have to specify the `regexp` option with a regular
-expression to match against.
-
-In `mode = tag` or `mode = hashtag`, `tags` option should contain a
-space-separated list of tags. If any of the tags are present in that list,
-filter will be triggered.
+Please note that in case of tags, you should NOT use `#` symbol in front of
+them.
 
 #### `type = visibility`
 Simple filter that just checks for post visibility.

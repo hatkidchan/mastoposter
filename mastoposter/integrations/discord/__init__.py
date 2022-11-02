@@ -1,4 +1,5 @@
 from configparser import SectionProxy
+from logging import getLogger
 from typing import List, Optional
 from httpx import AsyncClient
 from zlib import crc32
@@ -10,10 +11,16 @@ from mastoposter.integrations.discord.types import (
 )
 from mastoposter.types import Status
 
+logger = getLogger("integrations.discord")
+
 
 class DiscordIntegration(BaseIntegration):
-    def __init__(self, section: SectionProxy):
-        self.webhook = section.get("webhook", "")
+    def __init__(self, webhook: str):
+        self.webhook = webhook
+
+    @classmethod
+    def from_section(cls, section: SectionProxy) -> "DiscordIntegration":
+        return cls(section["webhook"])
 
     async def execute_webhook(
         self,
@@ -31,12 +38,17 @@ class DiscordIntegration(BaseIntegration):
                 if embeds is not None
                 else [],
             }
-            return (
+
+            logger.debug("Executing webhook with %r", json)
+
+            result = (
                 await c.post(
                     self.webhook,
                     json=json,
                 )
             ).json()
+            logger.debug("Result: %r", result)
+            return result
 
     async def __call__(self, status: Status) -> Optional[str]:
         source = status.reblog or status
@@ -77,6 +89,11 @@ class DiscordIntegration(BaseIntegration):
                             url=attachment.url,
                         ),
                     )
+                )
+            else:
+                logger.warn(
+                    "Unsupported attachment %r for Discord Embed",
+                    attachment.type,
                 )
 
         await self.execute_webhook(

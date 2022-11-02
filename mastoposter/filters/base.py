@@ -23,8 +23,8 @@ class BaseFilter(ABC):
 
     filter_name: ClassVar[str] = "_base"
 
-    def __init__(self, section: SectionProxy):
-        UNUSED(section)
+    def __init__(self):
+        pass
 
     def __init_subclass__(cls, filter_name: str, **kwargs):
         super().__init_subclass__(**kwargs)
@@ -51,7 +51,11 @@ class BaseFilter(ABC):
     def load_filter(cls, name: str, section: SectionProxy) -> "BaseFilter":
         if name not in cls.FILTER_REGISTRY:
             raise KeyError(f"no filter with name {name!r} was found")
-        return cls.FILTER_REGISTRY[name](section)
+        return cls.FILTER_REGISTRY[name].from_section(section)
+
+    @classmethod
+    def from_section(cls, section: SectionProxy) -> "BaseFilter":
+        raise NotImplementedError
 
     @classmethod
     def new_instance(cls, name: str, section: SectionProxy) -> FilterInstance:

@@ -1,6 +1,10 @@
+from configparser import ConfigParser
 from html import escape
+from logging import getLogger
 from typing import Callable, Dict
 from bs4.element import Tag, PageElement
+
+logger = getLogger("utils")
 
 
 def md_escape(text: str) -> str:
@@ -14,6 +18,23 @@ def md_escape(text: str) -> str:
         .replace("|", "\\|")
         .replace("`", "\\`")
     )
+
+
+def normalize_config(conf: ConfigParser):
+    for section in conf.sections():
+        _remove = set()
+        for k, v in conf[section].items():
+            normalized_key = k.replace(" ", "_").replace("-", "_")
+            if k == normalized_key:
+                continue
+            logger.info(
+                "moving %r.%r -> %r.%r", section, k, section, normalized_key
+            )
+            conf[section][normalized_key] = v
+            _remove.add(k)
+        for k in _remove:
+            logger.info("removing key %r.%r", section, k)
+            del conf[section][k]
 
 
 def node_to_html(el: PageElement) -> str:
