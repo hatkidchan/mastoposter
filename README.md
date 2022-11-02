@@ -104,6 +104,10 @@ connection error!!!)
 #### modules
 More about them later
 
+#### loglevel
+Self-explanatory, logging level. Can be either `DEBUG`, `INFO`, `WARNING` or
+`ERROR`. Defaults to `INFO`
+
 ### Modules
 There's two types of modules supported at this point: `telegram` and `discord`.
 Both of them are self-explanatory, but we'll go over them real quick.

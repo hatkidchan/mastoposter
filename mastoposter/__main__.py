@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 from asyncio import run
 from configparser import ConfigParser, ExtendedInterpolation
-from logging import INFO, Formatter, StreamHandler, getLogger
+from logging import INFO, Formatter, StreamHandler, getLevelName, getLogger
 from sys import stdout
 from mastoposter import execute_integrations, load_integrations_from
 from mastoposter.integrations import FilteredIntegration
@@ -72,10 +72,10 @@ async def listen(
 
 
 def main(config_path: str):
-    init_logger()
     conf = ConfigParser(interpolation=ExtendedInterpolation())
     conf.read(config_path)
 
+    init_logger(getLevelName(conf["main"].get("loglevel", "INFO")))
     normalize_config(conf)
 
     modules: List[FilteredIntegration] = load_integrations_from(conf)
