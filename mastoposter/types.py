@@ -72,7 +72,7 @@ class Account:
     emojis: List[Emoji]
     discoverable: bool
     created_at: datetime
-    last_status_at: datetime
+    last_status_at: Optional[datetime]
     statuses_count: int
     followers_count: int
     following_count: int
@@ -97,7 +97,7 @@ class Account:
             emojis=list(map(Emoji.from_dict, data["emojis"])),
             discoverable=data.get("discoverable", False),
             created_at=_date(data["created_at"]),
-            last_status_at=_date(data["last_status_at"]),
+            last_status_at=_date_or_none(data.get("last_status_at")),
             statuses_count=data["statuses_count"],
             followers_count=data["followers_count"],
             following_count=data["following_count"],
