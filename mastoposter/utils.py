@@ -75,27 +75,30 @@ def node_to_html(el: PageElement) -> str:
             ),
         ),
         "br": lambda _: "\n",
+        # NOTE may fail on nested lists
         "ul": lambda tag: (
-            "<code>%s</code>\n"
-            % str.join(
+            "\n"
+            + str.join(
                 "\n",
                 (
                     " \u2022 "
-                    + node_to_html(li).replace("\n", "\n   ").strip()
+                    + node_to_html(li).replace("\n", "\n   ").rstrip()
                     for li in tag.children
                 ),
             )
+            + "\n"
         ),
         "ol": lambda tag: (
-            "<code>%s</code>\n"
-            % str.join(
+            "\n"
+            + str.join(
                 "\n",
                 (
                     "%d. %s"
-                    % (i, node_to_html(li).replace("\n", "\n   ").strip())
+                    % (i, node_to_html(li).replace("\n", "\n   ").rstrip())
                     for i, li in enumerate(tag.children, 1)
                 ),
             )
+            + "\n"
         ),
     }
 
@@ -157,24 +160,25 @@ def node_to_markdown(el: PageElement) -> str:
             )
         ),
         "br": lambda _: "\n",
+        # NOTE may fail on nested lists
         "ul": lambda tag: (
-            "\n``%s``\n"
+            "\n%s\n"
             % str.join(
                 "\n",
                 (
                     " \u2022 "
-                    + node_to_markdown(li).replace("\n", "\n   ").strip()
+                    + node_to_markdown(li).replace("\n", "\n   ").rstrip()
                     for li in tag.children
                 ),
             )
         ),
         "ol": lambda tag: (
-            "\n``%s``\n"
+            "\n%s\n"
             % str.join(
                 "\n",
                 (
                     "%d. %s"
-                    % (i, node_to_markdown(li).replace("\n", "\n   ").strip())
+                    % (i, node_to_markdown(li).replace("\n", "\n   ").rstrip())
                     for i, li in enumerate(tag.children, 1)
                 ),
             )
@@ -212,7 +216,7 @@ def node_to_plaintext(el: PageElement) -> str:
             return "\n"
         elif el.name in ("ol", "ul"):
             children = map(node_to_plaintext, el.children)
-            return str.join(
+            return "\n%s\n" % str.join(
                 "\n",
                 (
                     " \u2022 %s" % li.replace("\n", "\n   ").strip()
