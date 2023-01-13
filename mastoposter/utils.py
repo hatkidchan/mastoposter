@@ -86,6 +86,17 @@ def node_to_html(el: PageElement) -> str:
                 ),
             )
         ),
+        "ol": lambda tag: (
+            "<code>%s</code>"
+            % str.join(
+                "\n",
+                (
+                    "%d. %s"
+                    % (i, node_to_html(li).replace("\n", "\n   ").strip())
+                    for i, li in enumerate(tag.children, 1)
+                ),
+            )
+        ),
     }
 
     TAG_SUBSTITUTIONS: Dict[str, str] = {
@@ -154,6 +165,17 @@ def node_to_markdown(el: PageElement) -> str:
                     " \u2022 "
                     + node_to_markdown(li).replace("\n", "\n   ").strip()
                     for li in tag.children
+                ),
+            )
+        ),
+        "ol": lambda tag: (
+            "\n``%s``\n"
+            % str.join(
+                "\n",
+                (
+                    "%d. %s"
+                    % (i, node_to_markdown(li).replace("\n", "\n   ").strip())
+                    for i, li in enumerate(tag.children, 1)
                 ),
             )
         ),
