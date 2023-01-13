@@ -76,7 +76,7 @@ def node_to_html(el: PageElement) -> str:
         ),
         "br": lambda _: "\n",
         "ul": lambda tag: (
-            "<code>%s</code>"
+            "<code>%s</code>\n"
             % str.join(
                 "\n",
                 (
@@ -87,7 +87,7 @@ def node_to_html(el: PageElement) -> str:
             )
         ),
         "ol": lambda tag: (
-            "<code>%s</code>"
+            "<code>%s</code>\n"
             % str.join(
                 "\n",
                 (
