@@ -135,8 +135,11 @@ class TelegramIntegration(BaseIntegration):
             chat_id=self.chat_id,
             caption=text,
             **{MEDIA_MAPPING[media.type]: media.url},
-            has_spoiler=MEDIA_SPOILER_SUPPORT.get(media.type, False)
-            and spoiler,
+            **(
+                {"has_spoiler": spoiler}
+                if MEDIA_SPOILER_SUPPORT.get(media.type, False)
+                else {}
+            ),
         )
 
     async def _post_mediagroup(
