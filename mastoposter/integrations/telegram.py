@@ -44,6 +44,13 @@ MEDIA_MAPPING: Mapping[str, str] = {
     "audio": "audio",
     "unknown": "document",
 }
+MEDIA_SPOILER_SUPPORT: Mapping[str, bool] = {
+    "image": True,
+    "video": True,
+    "gifv": True,
+    "audio": False,
+    "unknown": False,
+}
 DEFAULT_TEMPLATE: str = """\
 {% if status.reblog %}\
 Boost from <a href="{{status.reblog.account.url}}">\
@@ -110,7 +117,9 @@ class TelegramIntegration(BaseIntegration):
             text=text,
         )
 
-    async def _post_media(self, text: str, media: Attachment) -> TGResponse:
+    async def _post_media(
+        self, text: str, media: Attachment, spoiler: bool = False
+    ) -> TGResponse:
         # Just to be safe
         if media.type not in MEDIA_MAPPING:
             logger.warning(
@@ -126,10 +135,12 @@ class TelegramIntegration(BaseIntegration):
             chat_id=self.chat_id,
             caption=text,
             **{MEDIA_MAPPING[media.type]: media.url},
+            has_spoiler=MEDIA_SPOILER_SUPPORT.get(media.type, False)
+            and spoiler,
         )
 
     async def _post_mediagroup(
-        self, text: str, media: List[Attachment]
+        self, text: str, media: List[Attachment], spoiler: bool = False
     ) -> TGResponse:
         logger.debug("Sendind media group: %r (text=%r)", media, text)
         media_list: List[dict] = []
@@ -149,6 +160,11 @@ class TelegramIntegration(BaseIntegration):
                 {
                     "type": MEDIA_MAPPING[attachment.type],
                     "media": attachment.url,
+                    **(
+                        {"has_spoiler": spoiler}
+                        if MEDIA_SPOILER_SUPPORT.get(attachment.type, False)
+                        else {}
+                    ),
                 }
             )
             if len(media_list) == 1:
@@ -185,6 +201,7 @@ class TelegramIntegration(BaseIntegration):
     async def __call__(self, status: Status) -> Optional[str]:
         source = status.reblog or status
 
+        has_spoiler = source.spoiler_text != ""
         text = self.template.render({"status": status})
 
         ids = []
@@ -197,14 +214,14 @@ class TelegramIntegration(BaseIntegration):
         elif len(source.media_attachments) == 1:
             if (
                 res := await self._post_media(
-                    text, source.media_attachments[0]
+                    text, source.media_attachments[0], has_spoiler
                 )
             ).ok and res.result is not None:
                 ids.append(res.result["message_id"])
         else:
             if (
                 res := await self._post_mediagroup(
-                    text, source.media_attachments
+                    text, source.media_attachments, has_spoiler
                 )
             ).ok and res.result is not None:
                 ids.append(res.result["message_id"])
