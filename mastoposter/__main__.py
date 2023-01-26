@@ -1,7 +1,14 @@
 #!/usr/bin/env python3
 from asyncio import run
 from configparser import ConfigParser, ExtendedInterpolation
-from logging import INFO, Formatter, StreamHandler, getLevelName, getLogger
+from logging import (
+    INFO,
+    Formatter,
+    Logger,
+    StreamHandler,
+    getLevelName,
+    getLogger,
+)
 from sys import stdout
 from mastoposter import execute_integrations, load_integrations_from
 from mastoposter.integrations import FilteredIntegration
@@ -26,6 +33,9 @@ def init_logger(loglevel: int = INFO):
     stdout_handler.setFormatter(formatter)
     logger.addHandler(stdout_handler)
     logger.setLevel(loglevel)
+    for log in logger.manager.loggerDict.values():
+        if isinstance(log, Logger):
+            log.setLevel(loglevel)
 
 
 async def listen(
