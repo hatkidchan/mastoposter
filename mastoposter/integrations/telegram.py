@@ -204,7 +204,7 @@ class TelegramIntegration(BaseIntegration):
     async def __call__(self, status: Status) -> Optional[str]:
         source = status.reblog or status
 
-        has_spoiler = source.spoiler_text != ""
+        has_spoiler = source.sensitive
         text = self.template.render({"status": status})
 
         ids = []
