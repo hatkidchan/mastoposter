@@ -15,7 +15,7 @@ from mastoposter.integrations import FilteredIntegration
 from mastoposter.sources import websocket_source
 from typing import AsyncGenerator, Callable, List
 from mastoposter.types import Account, Status
-from httpx import Client
+from httpx import Client, HTTPTransport
 
 from mastoposter.utils import normalize_config
 
@@ -89,13 +89,14 @@ def main(config_path: str):
     normalize_config(conf)
 
     modules: List[FilteredIntegration] = load_integrations_from(conf)
+    retries: int = conf["main"].getint("http-retries", 5)
 
     logger.info("Loaded %d integrations", len(modules))
 
     user_id: str = conf["main"]["user"]
     if user_id == "auto":
         logger.info("config.main.user is set to auto, getting user ID")
-        with Client() as c:
+        with Client(transport=HTTPTransport(retries=retries)) as c:
             rq = c.get(
                 VERIFY_CREDS_TEMPLATE.format(**conf["main"]),
                 params={"access_token": conf["main"]["token"]},
@@ -114,6 +115,7 @@ def main(config_path: str):
             user_id,
             url=url,
             reconnect=conf["main"].getboolean("auto_reconnect", False),
+            reconnect_delay=conf["main"].getfloat("reconnect_delay", 1.0),
             list=conf["main"]["list"],
             access_token=conf["main"]["token"],
         )

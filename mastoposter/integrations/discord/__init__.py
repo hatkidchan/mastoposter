@@ -1,7 +1,7 @@
 from configparser import SectionProxy
 from logging import getLogger
 from typing import List, Optional
-from httpx import AsyncClient
+from httpx import AsyncClient, AsyncHTTPTransport
 from zlib import crc32
 from mastoposter.integrations.base import BaseIntegration
 from mastoposter.integrations.discord.types import (
@@ -15,12 +15,13 @@ logger = getLogger("integrations.discord")
 
 
 class DiscordIntegration(BaseIntegration):
-    def __init__(self, webhook: str):
+    def __init__(self, webhook: str, retries: int = 5):
         self.webhook = webhook
+        self.retries = retries
 
     @classmethod
     def from_section(cls, section: SectionProxy) -> "DiscordIntegration":
-        return cls(section["webhook"])
+        return cls(section["webhook"], section.getint("retries", 5))
 
     async def execute_webhook(
         self,
@@ -29,7 +30,9 @@ class DiscordIntegration(BaseIntegration):
         avatar_url: Optional[str] = None,
         embeds: Optional[List[DiscordEmbed]] = None,
     ) -> dict:
-        async with AsyncClient() as c:
+        async with AsyncClient(
+            transport=AsyncHTTPTransport(retries=self.retries)
+        ) as c:
             json = {
                 "content": content,
                 "username": username,

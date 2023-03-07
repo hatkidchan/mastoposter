@@ -2,7 +2,7 @@ from configparser import SectionProxy
 from dataclasses import dataclass
 from logging import getLogger
 from typing import Any, List, Mapping, Optional
-from httpx import AsyncClient
+from httpx import AsyncClient, AsyncHTTPTransport
 from jinja2 import Template
 from mastoposter.integrations.base import BaseIntegration
 from mastoposter.types import Attachment, Poll, Status
@@ -71,10 +71,12 @@ class TelegramIntegration(BaseIntegration):
         chat_id: str,
         template: Optional[Template] = None,
         silent: bool = True,
+        retries: int = 5,
     ):
         self.token = token
         self.chat_id = chat_id
         self.silent = silent
+        self.retries = retries
 
         if template is None:
             self.template = Template(emojize(DEFAULT_TEMPLATE))
@@ -86,29 +88,34 @@ class TelegramIntegration(BaseIntegration):
         return cls(
             token=section["token"],
             chat_id=section["chat"],
-            silent=section.getboolean("silent", True),
             template=Template(
                 emojize(section.get("template", DEFAULT_TEMPLATE))
             ),
+            silent=section.getboolean("silent", True),
+            retries=section.getint("http_retries", 5),
         )
 
-    async def _tg_request(self, method: str, **kwargs) -> TGResponse:
+    async def _tg_request(
+        self, client: AsyncClient, method: str, **kwargs
+    ) -> TGResponse:
         url = API_URL.format(self.token, method)
-        async with AsyncClient() as client:
-            logger.debug("TG request: %s(%r)", method, kwargs)
-            response = TGResponse.from_dict(
-                (await client.post(url, json=kwargs)).json(), kwargs
-            )
-            if not response.ok:
-                logger.error("TG error: %r", response.error)
-                logger.error("parameters: %r", kwargs)
-            else:
-                logger.debug("Result: %r", response.result)
-            return response
+        logger.debug("TG request: %s(%r)", method, kwargs)
+        response = TGResponse.from_dict(
+            (await client.post(url, json=kwargs)).json(), kwargs
+        )
+        if not response.ok:
+            logger.error("TG error: %r", response.error)
+            logger.error("parameters: %r", kwargs)
+        else:
+            logger.debug("Result: %r", response.result)
+        return response
 
-    async def _post_plaintext(self, text: str) -> TGResponse:
+    async def _post_plaintext(
+        self, client: AsyncClient, text: str
+    ) -> TGResponse:
         logger.debug("Sending HTML message: %r", text)
         return await self._tg_request(
+            client,
             "sendMessage",
             parse_mode="HTML",
             disable_notification=self.silent,
@@ -118,16 +125,21 @@ class TelegramIntegration(BaseIntegration):
         )
 
     async def _post_media(
-        self, text: str, media: Attachment, spoiler: bool = False
+        self,
+        client: AsyncClient,
+        text: str,
+        media: Attachment,
+        spoiler: bool = False,
     ) -> TGResponse:
         # Just to be safe
         if media.type not in MEDIA_MAPPING:
             logger.warning(
                 "Media %r has unknown type, falling back to plaintext", media
             )
-            return await self._post_plaintext(text)
+            return await self._post_plaintext(client, text)
 
         return await self._tg_request(
+            client,
             "send%s" % MEDIA_MAPPING[media.type].title(),
             parse_mode="HTML",
             disable_notification=self.silent,
@@ -143,7 +155,11 @@ class TelegramIntegration(BaseIntegration):
         )
 
     async def _post_mediagroup(
-        self, text: str, media: List[Attachment], spoiler: bool = False
+        self,
+        client: AsyncClient,
+        text: str,
+        media: List[Attachment],
+        spoiler: bool = False,
     ) -> TGResponse:
         logger.debug("Sendind media group: %r (text=%r)", media, text)
         media_list: List[dict] = []
@@ -179,6 +195,7 @@ class TelegramIntegration(BaseIntegration):
                 )
 
         return await self._tg_request(
+            client,
             "sendMediaGroup",
             disable_notification=self.silent,
             disable_web_page_preview=True,
@@ -187,10 +204,11 @@ class TelegramIntegration(BaseIntegration):
         )
 
     async def _post_poll(
-        self, poll: Poll, reply_to: Optional[str] = None
+        self, client: AsyncClient, poll: Poll, reply_to: Optional[str] = None
     ) -> TGResponse:
         logger.debug("Sending poll: %r", poll)
         return await self._tg_request(
+            client,
             "sendPoll",
             disable_notification=self.silent,
             disable_web_page_preview=True,
@@ -209,33 +227,36 @@ class TelegramIntegration(BaseIntegration):
 
         ids = []
 
-        if not source.media_attachments:
-            if (res := await self._post_plaintext(text)).ok:
-                if res.result:
+        async with AsyncClient(
+            transport=AsyncHTTPTransport(retries=self.retries)
+        ) as client:
+            if not source.media_attachments:
+                if (res := await self._post_plaintext(client, text)).ok:
+                    if res.result:
+                        ids.append(res.result["message_id"])
+
+            elif len(source.media_attachments) == 1:
+                if (
+                    res := await self._post_media(
+                        client, text, source.media_attachments[0], has_spoiler
+                    )
+                ).ok and res.result is not None:
+                    ids.append(res.result["message_id"])
+            else:
+                if (
+                    res := await self._post_mediagroup(
+                        client, text, source.media_attachments, has_spoiler
+                    )
+                ).ok and res.result is not None:
                     ids.append(res.result["message_id"])
 
-        elif len(source.media_attachments) == 1:
-            if (
-                res := await self._post_media(
-                    text, source.media_attachments[0], has_spoiler
-                )
-            ).ok and res.result is not None:
-                ids.append(res.result["message_id"])
-        else:
-            if (
-                res := await self._post_mediagroup(
-                    text, source.media_attachments, has_spoiler
-                )
-            ).ok and res.result is not None:
-                ids.append(res.result["message_id"])
-
-        if source.poll:
-            if (
-                res := await self._post_poll(
-                    source.poll, reply_to=ids[0] if ids else None
-                )
-            ).ok and res.result:
-                ids.append(res.result["message_id"])
+            if source.poll:
+                if (
+                    res := await self._post_poll(
+                        client, source.poll, reply_to=ids[0] if ids else None
+                    )
+                ).ok and res.result:
+                    ids.append(res.result["message_id"])
 
         return str.join(",", map(str, ids))
 

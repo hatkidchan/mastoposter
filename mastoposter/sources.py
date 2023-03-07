@@ -1,4 +1,4 @@
-from asyncio import exceptions
+from asyncio import exceptions, sleep
 from json import loads
 from logging import getLogger
 from typing import AsyncGenerator
@@ -10,7 +10,7 @@ logger = getLogger("sources")
 
 
 async def websocket_source(
-    url: str, reconnect: bool = False, **params
+    url: str, reconnect: bool = False, reconnect_delay: float = 1.0, **params
 ) -> AsyncGenerator[Status, None]:
     from websockets.client import connect
     from websockets.exceptions import WebSocketException
@@ -37,8 +37,10 @@ async def websocket_source(
                 raise
             else:
                 logger.warn("%r caught, reconnecting", e)
+                await sleep(reconnect_delay)
         else:
             logger.info(
                 "WebSocket closed connection without any errors, "
                 "but we're not done yet"
             )
+            await sleep(reconnect_delay)
