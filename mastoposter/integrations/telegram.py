@@ -1,7 +1,7 @@
 from configparser import SectionProxy
 from dataclasses import dataclass
 from logging import getLogger
-from typing import Any, List, Mapping, Optional
+from typing import Any, List, Mapping, Optional, Tuple
 from httpx import AsyncClient, AsyncHTTPTransport
 from jinja2 import Template
 from mastoposter.integrations.base import BaseIntegration
@@ -160,13 +160,12 @@ class TelegramIntegration(BaseIntegration):
         text: str,
         media: List[Attachment],
         spoiler: bool = False,
-    ) -> TGResponse:
+    ) -> Tuple[TGResponse, List[Attachment]]:
         logger.debug("Sendind media group: %r (text=%r)", media, text)
         media_list: List[dict] = []
         allowed_medias = {"image", "gifv", "video", "audio", "unknown"}
+        unused: List[Attachment] = []
         for attachment in media:
-            if attachment.type not in allowed_medias:
-                continue
             if attachment.type not in MEDIA_COMPATIBILITY:
                 logger.warning(
                     "attachment %r is not in %r",
@@ -174,7 +173,13 @@ class TelegramIntegration(BaseIntegration):
                     MEDIA_COMPATIBILITY,
                 )
                 continue
+
+            if attachment.type not in allowed_medias:
+                unused.append(attachment)
+                continue
+
             allowed_medias &= MEDIA_COMPATIBILITY[attachment.type]
+
             media_list.append(
                 {
                     "type": MEDIA_MAPPING[attachment.type],
@@ -186,6 +191,7 @@ class TelegramIntegration(BaseIntegration):
                     ),
                 }
             )
+
             if len(media_list) == 1:
                 media_list[0].update(
                     {
@@ -194,13 +200,16 @@ class TelegramIntegration(BaseIntegration):
                     }
                 )
 
-        return await self._tg_request(
-            client,
-            "sendMediaGroup",
-            disable_notification=self.silent,
-            disable_web_page_preview=True,
-            chat_id=self.chat_id,
-            media=media_list,
+        return (
+            await self._tg_request(
+                client,
+                "sendMediaGroup",
+                disable_notification=self.silent,
+                disable_web_page_preview=True,
+                chat_id=self.chat_id,
+                media=media_list,
+            ),
+            unused,
         )
 
     async def _post_poll(
@@ -243,12 +252,15 @@ class TelegramIntegration(BaseIntegration):
                 ).ok and res.result is not None:
                     ids.append(res.result["message_id"])
             else:
-                if (
-                    res := await self._post_mediagroup(
-                        client, text, source.media_attachments, has_spoiler
+                pending, i = source.media_attachments, 0
+                while len(pending) > 0 and i < 5:
+                    res, left = await self._post_mediagroup(
+                        client, text if i == 0 else "", pending, has_spoiler
                     )
-                ).ok and res.result is not None:
-                    ids.append(res.result["message_id"])
+                    if res.ok and res.result is not None:
+                        ids.extend([msg["message_id"] for msg in res.result])
+                    pending = left
+                    i += 1
 
             if source.poll:
                 if (
