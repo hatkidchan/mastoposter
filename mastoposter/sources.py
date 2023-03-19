@@ -3,7 +3,6 @@ from json import loads
 from logging import getLogger
 from typing import AsyncGenerator
 from urllib.parse import urlencode
-
 from mastoposter.types import Status
 
 logger = getLogger("sources")
@@ -32,6 +31,7 @@ async def websocket_source(
             WebSocketException,
             TimeoutError,
             exceptions.TimeoutError,
+            ConnectionError,
         ) as e:
             if not reconnect:
                 raise
