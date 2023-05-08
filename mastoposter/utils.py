@@ -1,3 +1,17 @@
+"""
+mastoposter - configurable reposter from Mastodon-compatible Fediverse servers
+Copyright (C) 2022-2023 hatkidchan <hatkidchan@gmail.com>
+
+This program is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+"""
 from configparser import ConfigParser
 from html import escape
 from logging import getLogger
@@ -38,7 +52,15 @@ def normalize_config(conf: ConfigParser):
 
 
 def node_to_html(el: PageElement) -> str:
-    TAG_TRANSFORMS: Dict[str, Callable[[Tag,], str]] = {
+    TAG_TRANSFORMS: Dict[
+        str,
+        Callable[
+            [
+                Tag,
+            ],
+            str,
+        ],
+    ] = {
         "a": lambda tag: '<a href="{}">{}</a>'.format(
             escape(tag.attrs["href"]),
             str.join("", map(node_to_html, tag.children)),
@@ -121,7 +143,15 @@ def node_to_html(el: PageElement) -> str:
 
 
 def node_to_markdown(el: PageElement) -> str:
-    TAG_TRANSFORMS: Dict[str, Callable[[Tag,], str]] = {
+    TAG_TRANSFORMS: Dict[
+        str,
+        Callable[
+            [
+                Tag,
+            ],
+            str,
+        ],
+    ] = {
         "a": lambda tag: "[{}]({})".format(
             md_escape(str.join("", map(node_to_markdown, tag.children))),
             tag.attrs["href"],
