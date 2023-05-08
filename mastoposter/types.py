@@ -158,7 +158,7 @@ class AttachmentMetaImage:
             **{f.name: data[f.name] for f in fields(cls) if f.name in data},
             original=cls.AttachmentMetaImageDimensions(**data["original"]),
             small=cls.AttachmentMetaImageDimensions(**data["small"]),
-            focus=cls.Vec2F(**data["focus"])
+            focus=cls.Vec2F(**data["focus"]),
         )
 
 
@@ -197,7 +197,7 @@ class AttachmentMetaVideo:
         return cls(
             **data,
             original=cls.AttachmentMetaVideoOriginal(**data["original"]),
-            small=cls.AttachmentMetaVideoSmall(**data["small"])
+            small=cls.AttachmentMetaVideoSmall(**data["small"]),
         )
 
 
