@@ -26,6 +26,9 @@ from mastoposter.integrations import (
 )
 from mastoposter.types import Status
 
+__version__ = "0"
+__description__ = "Mastodon to [anything] reposter"
+
 logger = getLogger()
 
 

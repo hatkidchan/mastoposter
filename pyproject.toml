@@ -1,0 +1,37 @@
+[build-system]
+requires = ["flit_core >=3.2,<4"]
+build-backend = "flit_core.buildapi"
+
+[project]
+name = "mastoposter"
+authors = [
+    {name = "hatkidchan", email = "hatkidchan@gmail.com"}
+]
+readme = "README.md"
+license = {file = "LICENSE"}
+classifiers = [
+    "Environment :: No Input/Output (Daemon)",
+    "Intended Audience :: End Users/Desktop",
+    "License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)",
+    "Topic :: Communications",
+    "Topic :: Internet :: WWW/HTTP"
+]
+keywords = ["mastodon", "discord", "telegram"]
+requires-python = ">=3.7"
+dependencies = [
+    "Jinja2",
+    "beautifulsoup4",
+    "emoji",
+    "httpx",
+    "websockets"
+]
+dynamic = ["version", "description"]
+
+[project.urls]
+Source = "https://github.com/hatkidchan/mastoposter"
+
+[project.scripts]
+mastoposter = "mastoposter.__main__:main"
+
+[tool.flit.sdist]
+include = ["config.ini"]
