@@ -1,14 +1,29 @@
-# mastoposter - easy-to-use mastodon-to-[everything] reposter!
+# mastoposter - easy-to-use mastodon-to-[everything] reposter
 
 Mastoposter is a simple zero-headache* service that forwards your toots from any
-Mastodon-compatible Fediverse software (Pleroma also works!) to any of your
+Mastodon-compatible Fediverse software (Pleroma also works\*\*!) to any of your
 other services! For now it supports only Discord webhooks and Telegram, but it
 can be easily extended to support pretty much anything!
 
 ## Installation
 
+### Via pip
+
+Since recently we have package published to pip (thanks to
+[@cybertailor@deadinsi.de](https://deadinsi.de/@cybertailor) for adding
+pyproject file), so now you can just do the following:
+
+```sh
+pip install mastoposter
+```
+
+Note that you would still have to clone repository to build a Docker image.
+
+### Old way
+
 You can run it either on your host machine, or inside a Docker container.
 In any case, you have to clone that repo first in order to do anything:
+
 ```sh
 git clone https://github.com/hatkidchan/mastoposter && cd mastoposter
 ```
@@ -16,11 +31,14 @@ git clone https://github.com/hatkidchan/mastoposter && cd mastoposter
 After that, you can either run it in Docker, set up a standalone systemd
 service, or just run it as it is!
 
-### Docker:
+### Docker
 
 ```sh
 docker build -t mastoposter .
-docker run --restart=always -dv /path/to/config.ini:/config.ini:ro --name mastoposter mastoposter
+docker run -d \
+    --restart=unless-stopped \
+    -v /path/to/config.ini:/config.ini:ro \
+    --name mastoposter mastoposter
 ```
 
 And you should be good to go
@@ -46,27 +64,38 @@ Restart=on-failure
 WantedBy=network.target
 ```
 
-Before running it though, don't forget to install dependencies from the 
+Before running it though, don't forget to install dependencies from the
 ./requirements.txt, but it's a good idea to use a virtual environment for that.
 Though, that's outside of the scope of that, so I won't cover it here.
 
 ### Running manually
+
 Just be in the folder with it, have dependencies installed and run:
+
+```sh
 python3 -m mastoposter config.ini
+```
 
 ## Configuration
 
 Configuration file is just a regular INI file with a couple sections.
 
+Configuration wizard is still in progress, but we have a couple examples for
+common use-cases. If you have troubles configuring it yourself, you could
+either use discussions feature, or ask me on Fedi directly (links on profile).
+
 ### [main]
+
 Section `main` contains settings of your account (ie, your instance, list ID,
 user ID, access token), as well as list of modules to load.
 
 #### instance
+
 This is your instance. It should be written without the `https://` part, so,
 for example, `mastodon.social`.
 
 #### token
+
 This is your access token.
 
 On Mastodon, you can acquire it by creating an application with the minimum of
@@ -78,6 +107,7 @@ tab of the devtools and look for `chats` request. Inside the request headers,
 there should be `Authorization: Bearer XXXXXXXXXXX` header. That's your token.
 
 #### user
+
 It's still not properly tested, but you could just leave it as `auto` for now.
 
 In case it fails, on Mastodon you can get your user ID by looking at your
@@ -88,6 +118,7 @@ On Pleroma you're out of luck again, I don't remember how I got mine. Just hope
 that "auto" will work, lol.
 
 #### list
+
 That's the main problem of this crossposter: it requires a list to be created
 to function properly. Both Pleroma and Mastodon support them, so it shouldn't be
 a big deal. Just create a list, add yourself into it and copy its ID (it should
@@ -97,18 +128,22 @@ List is required to filter incoming events. You can't just listen for home
 timeline 'cause some events are not guaranteed to be there (boosts at least).
 
 #### auto-reconnect
+
 You can set it to either `yes` or `no`. When set to `yes`, it will reconnect
 on any websocket error, but not on any error related to modules (even if it's a
 connection error!!!)
 
 #### modules
+
 More about them later
 
 #### loglevel
+
 Self-explanatory, logging level. Can be either `DEBUG`, `INFO`, `WARNING` or
 `ERROR`. Defaults to `INFO`
 
 ### Modules
+
 There's two types of modules supported at this point: `telegram` and `discord`.
 Both of them are self-explanatory, but we'll go over them real quick.
 
@@ -121,6 +156,7 @@ not have the `module/` prefix since it's always there. You can use multiple
 modules and separate them using spaces.
 
 #### `type = telegram`
+
 Module with that type will work in Telegram mode.
 It requires your Bot token to be set in the `token` field, as well as `chat`
 to be set with your chat ID. You can use `@username` if the chat is public.
@@ -135,13 +171,14 @@ such as `reblog_or_status` which points to either reblog, or status itself. Or
 `name_emojiless` which contains the name without emojis. Or `name` which
 contains either `display_name` or `username`, if first one is empty.
 
-
 #### `type = discord`
+
 Module for Discord webhooks. The only required parameter (besides the `type`) is
 `webhook`. It **should** have `wait=true` set. You can also use `thread_id` as a
 GET parameter to that. You also can use filters, nothing special about that.
 
 ### Filters
+
 Filters are the most powerful feature of this crossposter. They allow you to...
 
 Filter out where posts should and shouldn't go! It's that easy!
@@ -155,6 +192,7 @@ AND operator. You can also prefix filter name with either `~` or `!` to invert
 its behavior.
 
 #### `type = boost`
+
 Simple filter that passes through posts that are boosted from someone.
 
 It also has an optional `list` property where you can specify the list of
@@ -166,16 +204,19 @@ trigger that filter. If list is not empty, it will allow only users from that
 list.
 
 #### `type = mention`
+
 This filter is kinda similar to the `boost` one, but works with mentions.
 Also has `list` property, yada yada you got the idea, same deal with fnmatch.
 
 #### `type = spoiler`
+
 Matches posts with spoilers/content-warnings.
 
 Has an optional `regexp` parameter that will allow you to specify regular
 expression to match your spoiler text.
 
 #### `type = content`
+
 Filter to match post content against either a regular expression, or a list of
 tags. Matching is done on the plaintext version of the post.
 
@@ -188,12 +229,14 @@ Please note that in case of tags, you should NOT use `#` symbol in front of
 them.
 
 #### `type = visibility`
+
 Simple filter that just checks for post visibility.
 Has a single property `options` that is a space-separated list of allowed
 visibility levels. Note that `direct` visibility is always ignored so cannot
 be used here.
 
 #### `type = media`
+
 Filter that allows only some media types to be posted.
 
 `valid_media` is a space-separated list of media types from Mastodon API
@@ -207,6 +250,7 @@ opposite: if status has media with that type, filter won't trigger. `only`
 allows statuses with either no media, or listed types only.
 
 #### `type = combined`
+
 The most powerful filter 'cause it allows you to combine multiple filters using
 different operations.
 
@@ -221,7 +265,8 @@ some sort.
 
 ## Sample configurations
 
-### For Telegram:
+### For Telegram
+
 ```ini
 [main]
 modules = tg
@@ -236,7 +281,8 @@ token = 12345:blahblahblah
 chat = 12345
 ```
 
-### For Telegram with a separate shitpost channel:
+### For Telegram with a separate shitpost channel
+
 ```ini
 [main]
 modules = tg tg-shitpost
@@ -253,7 +299,7 @@ filters = !shitpost
 
 [module/tg-shitpost]
 type = telegram
-token = 12345:blahblahblah
+token = ${module/tg:token}
 chat = @shitposting
 filters = shitpost
 
@@ -262,3 +308,8 @@ type = content
 mode = tag
 tags = shitpost
 ```
+
+## Asterisks
+
+1. Well, most of the time that is.
+2. Works only when it has lists support.
