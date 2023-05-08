@@ -23,7 +23,7 @@ from logging import (
     getLevelName,
     getLogger,
 )
-from sys import stdout
+from sys import argv, stdout
 from mastoposter import execute_integrations, load_integrations_from
 from mastoposter.integrations import FilteredIntegration
 from mastoposter.sources import websocket_source
@@ -95,7 +95,7 @@ async def listen(
         await execute_integrations(status, drains)
 
 
-def main(config_path: str):
+def main(config_path: str = argv[1]):
     conf = ConfigParser(interpolation=ExtendedInterpolation())
     conf.read(config_path)
 
@@ -137,6 +137,4 @@ def main(config_path: str):
 
 
 if __name__ == "__main__":
-    from sys import argv
-
-    main(argv[1])
+    main()
