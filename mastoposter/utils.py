@@ -89,7 +89,7 @@ def node_to_html(el: PageElement) -> str:
         "span": lambda tag: (
             (
                 '<span class="tg-spoiler">%s</span>'
-                if "_mfm_blur_" in tag["class"]
+                if "_mfm_blur_" in tag.attrs.get("class", "")
                 else "%s"
             )
             % str.join("", map(node_to_html, tag.children))
@@ -186,7 +186,7 @@ def node_to_markdown(el: PageElement) -> str:
             "`%s`" % str.join("", map(node_to_markdown, tag.children))
         ),
         "span": lambda tag: (
-            ("||%s||" if "_mfm_blur_" in tag["class"] else "%s")
+            ("||%s||" if "_mfm_blur_" in tag.attrs.get("class", "") else "%s")
             % str.join("", map(node_to_markdown, tag.children))
         ),
         "blockquote": lambda tag: (
