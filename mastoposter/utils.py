@@ -264,7 +264,7 @@ def node_to_plaintext(el: PageElement) -> str:
                     " \u2022 %s" % li.replace("\n", "\n   ").strip()
                     for li in children
                 )
-                if el.name == "ol"
+                if el.name == "ul"
                 else (
                     "%d. %s" % (i, li.replace("\n", "\n   ").strip())
                     for i, li in enumerate(children)
