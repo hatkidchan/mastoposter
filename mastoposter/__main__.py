@@ -16,6 +16,7 @@ GNU General Public License for more details.
 from argparse import ArgumentParser
 from asyncio import run
 from configparser import ConfigParser, ExtendedInterpolation
+from grp import getgrnam
 from logging import (
     INFO,
     Formatter,
@@ -24,7 +25,8 @@ from logging import (
     getLevelName,
     getLogger,
 )
-from os import getenv
+from os import getenv, getuid, setgid, setuid
+from pwd import getpwnam
 from sys import stdout
 from typing import AsyncGenerator, Callable, List
 
@@ -58,6 +60,28 @@ def init_logger(loglevel: int = INFO):
     for log in logger.manager.loggerDict.values():
         if isinstance(log, Logger):
             log.setLevel(loglevel)
+
+
+def drop_privileges():
+    if getuid() != 0:
+        # we're not root
+        return
+
+    try:
+        gid = getgrnam("nobody").gr_gid
+        setgid(gid)
+    except (KeyError, OSError):
+        logger.warning("Could not set group to 'nobody'")
+    else:
+        logger.info("Dropping root privileges, running with group 'nobody'")
+
+    try:
+        uid = getpwnam("nobody").pw_uid
+        setuid(uid)
+    except (KeyError, OSError):
+        logger.warning("Could not set user to 'nobody'")
+    else:
+        logger.info("Dropping root privileges, running as user 'nobody'")
 
 
 async def listen(
@@ -118,6 +142,7 @@ def main():
     conf.read(args.config)
     init_logger(getLevelName(conf["main"].get("loglevel", "INFO")))
     normalize_config(conf)
+    drop_privileges()
 
     modules: List[FilteredIntegration] = load_integrations_from(conf)
     retries: int = conf["main"].getint("http-retries", 5)
