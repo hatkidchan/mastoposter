@@ -34,7 +34,7 @@ from mastoposter import (
     execute_integrations,
     load_integrations_from,
     __version__,
-    __description__
+    __description__,
 )
 from mastoposter.integrations import FilteredIntegration
 from mastoposter.sources import websocket_source
@@ -104,12 +104,9 @@ async def listen(
 
 
 def main():
-    parser = ArgumentParser(
-        prog="mastoposter",
-        description=__description__
-    )
-    parser.add_argument("config", nargs="?",
-        default=getenv("MASTOPOSTER_CONFIG_FILE")
+    parser = ArgumentParser(prog="mastoposter", description=__description__)
+    parser.add_argument(
+        "config", nargs="?", default=getenv("MASTOPOSTER_CONFIG_FILE")
     )
     parser.add_argument("-v", action="version", version=__version__)
     args = parser.parse_args()

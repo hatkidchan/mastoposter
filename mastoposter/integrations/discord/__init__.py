@@ -43,7 +43,7 @@ class DiscordIntegration(BaseIntegration):
         username: Optional[str] = None,
         avatar_url: Optional[str] = None,
         embeds: Optional[List[DiscordEmbed]] = None,
-    ) -> dict:
+    ) -> None:
         async with AsyncClient(
             transport=AsyncHTTPTransport(retries=self.retries)
         ) as c:
@@ -65,7 +65,6 @@ class DiscordIntegration(BaseIntegration):
                 )
             ).json()
             logger.debug("Result: %r", result)
-            return result
 
     async def __call__(self, status: Status) -> Optional[str]:
         source = status.reblog or status
