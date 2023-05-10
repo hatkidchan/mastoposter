@@ -13,6 +13,7 @@ but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 """
+from argparse import ArgumentParser
 from asyncio import run
 from configparser import ConfigParser, ExtendedInterpolation
 from logging import (
@@ -23,14 +24,21 @@ from logging import (
     getLevelName,
     getLogger,
 )
-from sys import argv, stdout
-from mastoposter import execute_integrations, load_integrations_from
-from mastoposter.integrations import FilteredIntegration
-from mastoposter.sources import websocket_source
+from os import getenv
+from sys import stdout
 from typing import AsyncGenerator, Callable, List
-from mastoposter.types import Account, Status
+
 from httpx import Client, HTTPTransport
 
+from mastoposter import (
+    execute_integrations,
+    load_integrations_from,
+    __version__,
+    __description__
+)
+from mastoposter.integrations import FilteredIntegration
+from mastoposter.sources import websocket_source
+from mastoposter.types import Account, Status
 from mastoposter.utils import normalize_config
 
 
@@ -95,10 +103,22 @@ async def listen(
         await execute_integrations(status, drains)
 
 
-def main(config_path: str = argv[1]):
-    conf = ConfigParser(interpolation=ExtendedInterpolation())
-    conf.read(config_path)
+def main():
+    parser = ArgumentParser(
+        prog="mastoposter",
+        description=__description__
+    )
+    parser.add_argument("config", nargs="?",
+        default=getenv("MASTOPOSTER_CONFIG_FILE")
+    )
+    parser.add_argument("-v", action="version", version=__version__)
+    args = parser.parse_args()
 
+    if not args.config:
+        raise RuntimeError("No config file. Aborting")
+
+    conf = ConfigParser(interpolation=ExtendedInterpolation())
+    conf.read(args.config)
     init_logger(getLevelName(conf["main"].get("loglevel", "INFO")))
     normalize_config(conf)
 
