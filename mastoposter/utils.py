@@ -194,7 +194,7 @@ def node_to_markdown(el: PageElement) -> str:
             % str.join(
                 "\n",
                 (
-                    "▍%s" % part
+                    "\u258d%s" % part
                     for part in str.join(
                         "", map(node_to_markdown, tag.children)
                     ).split("\n")
@@ -256,6 +256,16 @@ def node_to_plaintext(el: PageElement) -> str:
             return str.join("", map(node_to_plaintext, el.children)) + "\n\n"
         elif el.name == "br":
             return "\n"
+        elif el.name == "blockquote":
+            return str.join(
+                "\n",
+                (
+                    "\u258d%s" % part
+                    for part in str.join(
+                        "", map(node_to_plaintext, el.children)
+                    ).split("\n")
+                ),
+            )
         elif el.name in ("ol", "ul"):
             children = map(node_to_plaintext, el.children)
             return "\n%s\n" % str.join(
