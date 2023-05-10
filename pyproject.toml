@@ -34,4 +34,4 @@ Source = "https://github.com/hatkidchan/mastoposter"
 mastoposter = "mastoposter.__main__:main"
 
 [tool.flit.sdist]
-include = ["config.ini"]
+include = ["config.ini", "contrib/*"]
