@@ -27,7 +27,7 @@ from mastoposter.integrations import (
 from mastoposter.types import Status
 
 __version__ = "0.1"
-__description__ = "Mastodon to [anything] reposter"
+__description__ = "Configurable reposter from Mastodon-compatible Fediverse servers"
 
 logger = getLogger()
 
