@@ -267,7 +267,7 @@ def node_to_plaintext(el: PageElement) -> str:
                 if el.name == "ul"
                 else (
                     "%d. %s" % (i, li.replace("\n", "\n   ").strip())
-                    for i, li in enumerate(children)
+                    for i, li in enumerate(children, 1)
                 ),
             )
         return str.join("", map(node_to_plaintext, el.children))
