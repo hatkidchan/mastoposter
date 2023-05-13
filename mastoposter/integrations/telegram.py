@@ -188,7 +188,7 @@ class TelegramIntegration(BaseIntegration):
                 )
                 continue
 
-            if attachment.type not in allowed_medias:
+            if attachment.type not in allowed_medias or len(media_list) >= 10:
                 unused.append(attachment)
                 continue
 
