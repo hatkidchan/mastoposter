@@ -151,6 +151,8 @@ def node_to_html(el: PageElement) -> str:
 
 
 def node_to_markdown(el: PageElement) -> str:
+    """ Convert HTML to Markdown (Discord flavor) """
+
     TAG_TRANSFORMS: Dict[
         str,
         Callable[
@@ -168,19 +170,19 @@ def node_to_markdown(el: PageElement) -> str:
             str.join("", map(node_to_markdown, tag.children)) + "\n\n"
         ),
         "i": lambda tag: (
-            "_%s_" % str.join("", map(node_to_markdown, tag.children))
-        ),
-        "b": lambda tag: (
             "*%s*" % str.join("", map(node_to_markdown, tag.children))
         ),
+        "b": lambda tag: (
+            "**%s**" % str.join("", map(node_to_markdown, tag.children))
+        ),
         "s": lambda tag: (
-            "~%s~" % str.join("", map(node_to_markdown, tag.children))
+            "~~%s~~" % str.join("", map(node_to_markdown, tag.children))
         ),
         "u": lambda tag: (
             "__%s__" % str.join("", map(node_to_markdown, tag.children))
         ),
         "pre": lambda tag: (
-            "\n``%s``\n" % str.join("", map(node_to_markdown, tag.children))
+            "\n```%s```\n" % str.join("", map(node_to_markdown, tag.children))
         ),
         "code": lambda tag: (
             "`%s`" % str.join("", map(node_to_markdown, tag.children))
@@ -194,7 +196,7 @@ def node_to_markdown(el: PageElement) -> str:
             % str.join(
                 "\n",
                 (
-                    "\u258d%s" % part
+                    "> %s" % part
                     for part in str.join(
                         "", map(node_to_markdown, tag.children)
                     ).split("\n")
@@ -208,7 +210,7 @@ def node_to_markdown(el: PageElement) -> str:
             % str.join(
                 "\n",
                 (
-                    " \u2022 "
+                    "* "
                     + node_to_markdown(li).replace("\n", "\n   ").rstrip()
                     for li in tag.children
                 ),
