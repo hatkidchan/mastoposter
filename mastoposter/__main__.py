@@ -100,7 +100,7 @@ async def listen(
             )
             continue
 
-        await execute_integrations(status, drains)
+        logger.info(await execute_integrations(status, drains))
 
 
 def main():
