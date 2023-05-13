@@ -18,7 +18,7 @@ from typing import Any, Callable, Optional, List, Literal, TypeVar
 
 from bs4 import BeautifulSoup
 
-from mastoposter.utils import node_to_html, node_to_markdown, node_to_plaintext
+from mastoposter.text import node_process
 
 
 def _date(val: str) -> datetime:
@@ -355,18 +355,18 @@ class Status:
 
     @property
     def content_flathtml(self) -> str:
-        return node_to_html(
-            BeautifulSoup(self.content, features="lxml")
+        return node_process(
+            BeautifulSoup(self.content, features="lxml"), "html"
         ).rstrip()
 
     @property
     def content_markdown(self) -> str:
-        return node_to_markdown(
-            BeautifulSoup(self.content, features="lxml")
+        return node_process(
+            BeautifulSoup(self.content, features="lxml"), "markdown"
         ).rstrip()
 
     @property
     def content_plaintext(self) -> str:
-        return node_to_plaintext(
-            BeautifulSoup(self.content, features="lxml")
+        return node_process(
+            BeautifulSoup(self.content, features="lxml"), "plain"
         ).rstrip()
