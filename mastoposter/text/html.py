@@ -12,10 +12,12 @@ but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 """
+from bs4 import NavigableString
 from mastoposter.text import (
     nodes_process,
     register_converter,
     register_fmt_converter,
+    register_text_node_converter,
     node_process,
     STRIPE,
     BULLET,
@@ -24,6 +26,11 @@ from mastoposter.text import (
 from typing import Optional
 from bs4.element import Tag
 from html import escape
+
+
+@register_text_node_converter("html")
+def proc_text_node_to_html(txt: NavigableString) -> str:
+    return escape(txt).strip()
 
 
 @register_converter("a", "html")
@@ -81,7 +88,7 @@ def proc_tag_ul_to_html(tag: Tag) -> str:
     )
 
 
-@register_converter("li", "html")
+@register_converter("ol", "html")
 def proc_tag_li_to_html(tag: Tag) -> str:
     return "\n" + str.join(
         "\n",

@@ -63,7 +63,7 @@ def proc_tag_ul_to_markdown(tag: Tag) -> str:
     )
 
 
-@register_converter("li", "markdown")
+@register_converter("ol", "markdown")
 def proc_tag_li_to_markdown(tag: Tag) -> str:
     return "\n" + str.join(
         "\n",

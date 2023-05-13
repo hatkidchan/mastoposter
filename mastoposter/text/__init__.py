@@ -14,7 +14,6 @@ GNU General Public License for more details.
 """
 from typing import Callable, Iterable, Literal, Optional
 from bs4.element import Tag, PageElement
-from html import escape
 
 VALID_OUTPUT_TYPES = Literal["plain", "html", "markdown"]
 BULLET = "\u2022"
@@ -39,7 +38,7 @@ node_processors: dict[
     list[
         Callable[
             [
-                Tag,
+                PageElement,
             ],
             Optional[str],
         ]
@@ -49,7 +48,16 @@ node_processors: dict[
 
 def register_converter(tag: str, output_type: VALID_OUTPUT_TYPES = "plain"):
     def decorate(function):
+        node_processors.setdefault((output_type, tag), [])
         node_processors[output_type, tag].append(function)
+        return function
+
+    return decorate
+
+
+def register_text_node_converter(output_type: VALID_OUTPUT_TYPES = "plain"):
+    def decorate(function):
+        node_processors[output_type, ":text:"] = [function]
         return function
 
     return decorate
@@ -71,11 +79,15 @@ def register_fmt_converter(
 
 def node_process(el: PageElement, type_: VALID_OUTPUT_TYPES) -> str:
     if isinstance(el, Tag):
-        for func in node_processors[type_, el.name]:
-            result = func(el)  # XXX: could use walrus, but it's py3.8+ only
-            if result:
-                return result
-    return escape(str(el))
+        if (type_, el.name) in node_processors:
+            for func in node_processors[type_, el.name]:
+                result = func(el)
+                if result:
+                    return result
+        return nodes_process(el.children, type_)
+    if (type_, ":text:") in node_processors:
+        return node_processors[type_, ":text:"][0](el) or str(el)
+    return str(el)
 
 
 def nodes_process(

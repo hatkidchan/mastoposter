@@ -23,14 +23,13 @@ from mastoposter.text import (
 )
 
 from bs4.element import Tag
-from html import escape
 
 
 @register_converter("a", "plain")
 def proc_tag_a_to_plain(tag: Tag):
     return "%s (%s)" % (
         nodes_process(tag.children, "plain"),
-        escape(tag.attrs.get("href", "#")),
+        tag.attrs.get("href", "#"),
     )
 
 
@@ -64,7 +63,7 @@ def proc_tag_ul_to_plain(tag: Tag) -> str:
     )
 
 
-@register_converter("li", "plain")
+@register_converter("ol", "plain")
 def proc_tag_li_to_plain(tag: Tag) -> str:
     return "\n" + str.join(
         "\n",
