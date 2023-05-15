@@ -30,7 +30,7 @@ from html import escape
 
 @register_text_node_converter("html")
 def proc_text_node_to_html(txt: NavigableString) -> str:
-    return escape(txt).strip()
+    return escape(txt)
 
 
 @register_converter("a", "html")
