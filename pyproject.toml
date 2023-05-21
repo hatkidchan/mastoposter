@@ -28,6 +28,11 @@ dependencies = [
 ]
 dynamic = ["version"]
 
+[project.optional-dependencies]
+test = [
+    "pytest"
+]
+
 [project.urls]
 Source = "https://github.com/hatkidchan/mastoposter"
 
