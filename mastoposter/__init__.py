@@ -26,7 +26,7 @@ from mastoposter.integrations import (
 )
 from mastoposter.types import Status
 
-__version__ = "0.1"
+__version__ = "0.2"
 __description__ = (
     "Configurable reposter from Mastodon-compatible Fediverse servers"
 )
