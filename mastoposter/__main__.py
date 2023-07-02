@@ -71,7 +71,7 @@ async def listen(
     async for status in source(**kwargs):
         logger.info("New status: %s", status.uri)
         logger.debug("Got status: %r", status)
-        if status.account.id != user:
+        if status.account.id != user and user != "all":
             logger.info(
                 "Skipping status %s (account.id=%r != %r)",
                 status.uri,
@@ -132,8 +132,7 @@ def main():
                 VERIFY_CREDS_TEMPLATE.format(**conf["main"]),
                 params={"access_token": conf["main"]["token"]},
             )
-            account = Account.from_dict(rq.json())
-            user_id = account.id
+            user_id = Account.from_dict(rq.json()).id
 
     logger.info("account.id=%s", user_id)
 
