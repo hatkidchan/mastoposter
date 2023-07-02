@@ -15,7 +15,9 @@ GNU General Public License for more details.
 from configparser import SectionProxy
 from logging import getLogger
 from typing import List, Optional
+from emoji import emojize
 from httpx import AsyncClient, AsyncHTTPTransport
+from jinja2 import Template
 from zlib import crc32
 from mastoposter.integrations.base import BaseIntegration
 from mastoposter.integrations.discord.types import (
@@ -28,14 +30,39 @@ from mastoposter.types import Status
 logger = getLogger("integrations.discord")
 
 
+DEFAULT_USERNAME_TEMPLATE = "{{ status.account.acct }}"
+
+
 class DiscordIntegration(BaseIntegration):
-    def __init__(self, webhook: str, retries: int = 5):
+    def __init__(
+        self,
+        webhook: str,
+        retries: int = 5,
+        username_template: Optional[Template] = None,
+        overwrite_avatar: bool = True,
+    ):
+        if username_template is None:
+            self.username_template = Template(
+                emojize(DEFAULT_USERNAME_TEMPLATE)
+            )
+        else:
+            self.username_template = username_template
+        self.overwrite_avatar = overwrite_avatar
         self.webhook = webhook
         self.retries = retries
 
     @classmethod
     def from_section(cls, section: SectionProxy) -> "DiscordIntegration":
-        return cls(section["webhook"], section.getint("retries", 5))
+        return cls(
+            webhook=section["webhook"],
+            retries=section.getint("retries", 5),
+            username_template=Template(
+                emojize(
+                    section.get("username_format", DEFAULT_USERNAME_TEMPLATE)
+                )
+            ),
+            overwrite_avatar=section.getboolean("overwrite_avatar", True),
+        )
 
     async def execute_webhook(
         self,
@@ -112,10 +139,12 @@ class DiscordIntegration(BaseIntegration):
                     attachment.type,
                 )
 
-        await self.execute_webhook(
-            username=status.account.acct,
-            avatar_url=status.account.avatar_static,
-            embeds=embeds,
-        )
+        params = {}
+
+        if self.overwrite_avatar:
+            params["avatar_url"] = status.account.avatar_static
+        params["username"] = self.username_template.render({"status": status})
+
+        await self.execute_webhook(embeds=embeds, **params)
 
         return None
