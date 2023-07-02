@@ -136,7 +136,10 @@ def main():
 
     logger.info("account.id=%s", user_id)
 
-    url = "wss://{}/api/v1/streaming".format(conf["main"]["instance"])
+    url = conf["main"].get(
+        "streaming_url",
+        "wss://{}/api/v1/streaming".format(conf["main"]["instance"]),
+    )
 
     run(
         listen(
