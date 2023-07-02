@@ -115,7 +115,8 @@ def main():
         raise RuntimeError("No config file. Aborting")
 
     conf = ConfigParser(interpolation=ExtendedInterpolation())
-    conf.read(args.config)
+    if not conf.read(args.config):
+        raise RuntimeError("Failed to load config")
     init_logger(getLevelName(conf["main"].get("loglevel", "INFO")))
     normalize_config(conf)
 
