@@ -34,13 +34,13 @@ async def websocket_source(
             async with connect(url) as ws:
                 while (msg := await ws.recv()) is not None:
                     event = loads(msg)
+                    logger.debug("data: %r", event)
                     if "error" in event:
                         raise Exception(event["error"])
                     if event["event"] == "update":
                         yield Status.from_dict(loads(event["payload"]))
                     else:
                         logger.warn("unknown event type %r", event["event"])
-                        logger.debug("data: %r", event)
         except (
             WebSocketException,
             TimeoutError,
