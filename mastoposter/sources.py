@@ -28,10 +28,16 @@ async def websocket_source(
     from websockets.client import connect
     from websockets.exceptions import WebSocketException
 
-    url = f"{url}?" + urlencode({"stream": "list", **params})
+    param_dict = {"stream": "list", **params}
+    public_param_dict = param_dict.copy()
+    public_param_dict["access_token"] = 'SCRUBBED'
+    public_url = f"{url}?" + urlencode(public_param_dict)
+    url = f"{url}?" + urlencode(param_dict)
     while True:
         try:
-            async with connect(url) as ws:
+            logger.info("attempting to connect to %s", public_url)
+            async with connect(url, open_timeout=60) as ws:
+                logger.info("Connected to WebSocket")
                 while (msg := await ws.recv()) is not None:
                     event = loads(msg)
                     logger.debug("data: %r", event)
