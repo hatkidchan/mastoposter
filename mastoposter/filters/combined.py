@@ -12,6 +12,7 @@ but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 """
+
 from configparser import ConfigParser, SectionProxy
 from typing import Callable, ClassVar, Dict, List, Sequence
 from mastoposter.filters.base import BaseFilter, FilterInstance
