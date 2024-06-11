@@ -64,6 +64,7 @@ async def listen(
     source: Callable[..., AsyncGenerator[Status, None]],
     drains: List[FilteredIntegration],
     user: str,
+    replies_to_other_accounts_should_not_be_skipped: bool = False,
     /,
     **kwargs,
 ):
@@ -93,7 +94,7 @@ async def listen(
         if (
             status.in_reply_to_account_id is not None
             and status.in_reply_to_account_id != user
-        ):
+        ) and not replies_to_other_accounts_should_not_be_skipped:
             logger.info(
                 "Skipping post %s because it's a reply to another person",
                 status.uri,
@@ -147,6 +148,11 @@ def main():
             modules,
             user_id,
             url=url,
+            replies_to_other_accounts_should_not_be_skipped=conf[
+                "main"
+            ].getboolean(
+                "replies_to_other_accounts_should_not_be_skipped", False
+            ),
             reconnect=conf["main"].getboolean("auto_reconnect", False),
             reconnect_delay=conf["main"].getfloat("reconnect_delay", 1.0),
             list=conf["main"]["list"],

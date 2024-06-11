@@ -12,6 +12,7 @@ but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 """
+
 from configparser import SectionProxy
 from re import Pattern, compile as regexp
 from typing import ClassVar, Set

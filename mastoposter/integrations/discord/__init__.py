@@ -12,6 +12,7 @@ but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 """
+
 from configparser import SectionProxy
 from logging import getLogger
 from typing import List, Optional
@@ -51,9 +52,11 @@ class DiscordIntegration(BaseIntegration):
                 "content": content,
                 "username": username,
                 "avatar_url": avatar_url,
-                "embeds": [embed.asdict() for embed in embeds]
-                if embeds is not None
-                else [],
+                "embeds": (
+                    [embed.asdict() for embed in embeds]
+                    if embeds is not None
+                    else []
+                ),
             }
 
             logger.debug("Executing webhook with %r", json)
