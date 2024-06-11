@@ -24,7 +24,8 @@ logger = getLogger("sources")
 
 
 async def websocket_source(
-    url: str, reconnect: bool = False, reconnect_delay: float = 1.0, **params
+    url: str, reconnect: bool = False, reconnect_delay: float = 1.0,
+    connect_timeout: float = 60.0, **params
 ) -> AsyncGenerator[Status, None]:
     from websockets.client import connect
     from websockets.exceptions import WebSocketException
@@ -37,7 +38,7 @@ async def websocket_source(
     while True:
         try:
             logger.info("attempting to connect to %s", public_url)
-            async with connect(url, open_timeout=60) as ws:
+            async with connect(url, open_timeout=connect_timeout) as ws:
                 logger.info("Connected to WebSocket")
                 while (msg := await ws.recv()) is not None:
                     event = loads(msg)

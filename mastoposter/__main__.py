@@ -155,6 +155,7 @@ def main():
             ),
             reconnect=conf["main"].getboolean("auto_reconnect", False),
             reconnect_delay=conf["main"].getfloat("reconnect_delay", 1.0),
+            connect_timeout=conf["main"].getfloat("connect_timeout", 60.0),
             list=conf["main"]["list"],
             access_token=conf["main"]["token"],
         )
